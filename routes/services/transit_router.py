@@ -18,6 +18,18 @@ class TransitEdge:
 
 
 @dataclass
+class TransitSegment:
+    """
+    A continuous journey on a single bus route.
+    """
+
+    route: object
+    operator: object
+    stops: list[BusStop]
+    distance: float
+
+
+@dataclass
 class TransitPath:
     """
     A complete journey through the transit network.
@@ -28,6 +40,7 @@ class TransitPath:
     total_distance: float
     transfers: int
     routing_cost: float
+    segments: list[TransitSegment]
 
 
 def build_transit_graph() -> dict[int, list[TransitEdge]]:
@@ -122,6 +135,7 @@ def find_shortest_path(
             total_distance=0.0,
             transfers=0,
             routing_cost=0.0,
+            segments=[],
         )
 
     graph = build_transit_graph()
@@ -290,6 +304,7 @@ def find_shortest_path(
             best_cost[destination_state],
             2,
         ),
+        segments=build_segments(edges),
     )
 
 
@@ -311,3 +326,55 @@ def count_transfers(edges: list[TransitEdge]) -> int:
         previous_route_id = edge.route.id
 
     return transfers
+
+
+def build_segments(edges: list[TransitEdge]) -> list[TransitSegment]:
+    """
+    Group consecutive edges that belong to the same bus route
+    into continuous journey segments.
+    """
+
+    if not edges:
+        return []
+
+    segments: list[TransitSegment] = []
+
+    current_route = edges[0].route
+    current_stops = [
+        edges[0].from_stop,
+        edges[0].to_stop,
+    ]
+    current_distance = edges[0].distance
+
+    for edge in edges[1:]:
+        if edge.route.id == current_route.id:
+            current_stops.append(edge.to_stop)
+            current_distance += edge.distance
+            continue
+
+        segments.append(
+            TransitSegment(
+                route=current_route,
+                operator=current_route.operator,
+                stops=current_stops,
+                distance=round(current_distance, 2),
+            )
+        )
+
+        current_route = edge.route
+        current_stops = [
+            edge.from_stop,
+            edge.to_stop,
+        ]
+        current_distance = edge.distance
+
+    segments.append(
+        TransitSegment(
+            route=current_route,
+            operator=current_route.operator,
+            stops=current_stops,
+            distance=round(current_distance, 2),
+        )
+    )
+
+    return segments
