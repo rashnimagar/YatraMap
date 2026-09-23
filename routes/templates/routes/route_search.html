@@ -1,0 +1,405 @@
+{% extends "routes/base.html" %}
+
+{% block extra_head %}
+
+  {% if map_header %}
+    {{ map_header|safe }}
+  {% endif %}
+
+{% endblock %}
+
+{% block title %}
+  YatraMap — Bus Route Search
+{% endblock %}
+
+{% block content %}
+
+<section class="route-page">
+
+  <div class="container">
+
+    <!-- Page introduction -->
+    <div class="page-intro">
+      <p class="eyebrow">KATHMANDU VALLEY TRANSIT</p>
+
+      <h1>Find your bus route</h1>
+
+      <p class="page-description">
+        Search between bus stops and discover available routes,
+        fares, distances and stops along the way.
+      </p>
+    </div>
+
+
+    <!-- Search panel -->
+    <section class="search-panel" aria-label="Bus route search">
+
+      <form method="get" class="route-search-form">
+
+        <div class="search-fields">
+
+          <!-- From -->
+          <div class="field-group">
+
+            <label for="source">
+              From
+            </label>
+
+            <select
+              name="source"
+              id="source"
+              required
+            >
+              <option value="">
+                Select starting stop
+              </option>
+
+              {% for stop in stops %}
+                <option
+                  value="{{ stop.id }}"
+                  {% if source and source.id == stop.id %}
+                    selected
+                  {% endif %}
+                >
+                  {{ stop.name }}
+                </option>
+              {% endfor %}
+            </select>
+
+          </div>
+
+
+          <!-- Swap -->
+          <button
+            type="button"
+            class="swap-button"
+            aria-label="Swap starting point and destination"
+            title="Swap locations"
+            onclick="swapLocations()"
+          >
+            ⇅
+          </button>
+
+
+          <!-- To -->
+          <div class="field-group">
+
+            <label for="destination">
+              To
+            </label>
+
+            <select
+              name="destination"
+              id="destination"
+              required
+            >
+              <option value="">
+                Select destination stop
+              </option>
+
+              {% for stop in stops %}
+                <option
+                  value="{{ stop.id }}"
+                  {% if destination and destination.id == stop.id %}
+                    selected
+                  {% endif %}
+                >
+                  {{ stop.name }}
+                </option>
+              {% endfor %}
+            </select>
+
+          </div>
+
+        </div>
+
+
+        <div class="search-actions">
+
+          <button
+            type="submit"
+            class="find-route-button"
+          >
+            <span>Find Route</span>
+            <span aria-hidden="true">→</span>
+          </button>
+
+        </div>
+
+      </form>
+
+    </section>
+
+
+    {% if source and destination %}
+
+      <!-- Search summary -->
+      <section class="search-summary">
+
+        <div>
+          <span class="summary-label">
+            ROUTE SEARCH
+          </span>
+
+          <h2>
+            {{ source.name }}
+            <span aria-hidden="true">→</span>
+            {{ destination.name }}
+          </h2>
+        </div>
+
+        {% if results %}
+          <span class="result-count">
+            {{ results|length }}
+            route{{ results|length|pluralize }}
+            found
+          </span>
+        {% endif %}
+
+      </section>
+
+
+      {% if results %}
+
+        <!-- Route results -->
+        <section class="route-results">
+
+          <div class="section-heading">
+
+            <div>
+              <p class="eyebrow">AVAILABLE ROUTES</p>
+
+              <h2>
+                Choose your route
+              </h2>
+            </div>
+
+          </div>
+
+
+          <div class="route-list">
+
+            {% for result in results %}
+
+              <article
+                class="route-card
+                {% if selected_result and selected_result.route.id == result.route.id %}
+                  route-card-selected
+                {% endif %}"
+              >
+
+                <div class="route-card-header">
+
+                  <div class="route-identity">
+
+                    <span class="route-number">
+                      {{ result.route.route_number }}
+                    </span>
+
+                    <div>
+                      <h3>
+                        {{ result.route.name }}
+                      </h3>
+
+                      <p>
+                        {{ result.route.operator.name }}
+                      </p>
+                    </div>
+
+                  </div>
+
+
+                  {% if selected_result and selected_result.route.id == result.route.id %}
+
+                    <span class="selected-badge">
+                      Selected
+                    </span>
+
+                  {% else %}
+
+                    <a
+                      class="view-route-link"
+                      href="?source={{ source.id }}&destination={{ destination.id }}&route={{ result.route.id }}"
+                    >
+                      View route →
+                    </a>
+
+                  {% endif %}
+
+                </div>
+
+
+                <div class="route-metrics">
+
+                  <div class="route-metric">
+                    <span class="metric-label">
+                      Distance
+                    </span>
+
+                    <strong>
+                      {{ result.total_distance }} km
+                    </strong>
+                  </div>
+
+
+                  <div class="route-metric">
+                    <span class="metric-label">
+                      Stops
+                    </span>
+
+                    <strong>
+                      {{ result.stops|length }}
+                    </strong>
+                  </div>
+
+
+                  <div class="route-metric">
+                    <span class="metric-label">
+                      Fare
+                    </span>
+
+                    <strong>
+                      {% if result.route.base_fare != None %}
+                        NPR {{ result.route.base_fare }}
+                      {% else %}
+                        —
+                      {% endif %}
+                    </strong>
+                  </div>
+
+                </div>
+
+
+                <div class="stop-list">
+
+                  <div class="stop-list-header">
+                    <span>
+                      Stops along this route
+                    </span>
+                  </div>
+
+                  <ol>
+
+                    {% for route_stop in result.stops %}
+
+                      <li>
+                        <span class="stop-marker"></span>
+
+                        <span class="stop-name">
+                          {{ route_stop.stop.name }}
+                        </span>
+                      </li>
+
+                    {% endfor %}
+
+                  </ol>
+
+                </div>
+
+              </article>
+
+            {% endfor %}
+
+          </div>
+
+        </section>
+
+
+        <!-- Map -->
+        {% if selected_result and map_html %}
+
+          <section class="map-section">
+
+            <div class="section-heading">
+
+              <div>
+                <p class="eyebrow">MAP</p>
+
+                <h2>
+                  {{ selected_result.route.route_number }}
+                  route map
+                </h2>
+              </div>
+
+              <span class="map-route-name">
+                {{ selected_result.route.name }}
+              </span>
+
+            </div>
+
+
+            <div class="map-card">
+
+              <div id="route-map" class="route-map">
+                {{ map_html|safe }}
+              </div>
+
+            </div>
+
+          </section>
+
+        {% endif %}
+
+
+      {% else %}
+
+        <!-- No route -->
+        <section class="empty-state">
+
+          <div class="empty-icon" aria-hidden="true">
+            —
+          </div>
+
+          <h2>
+            No direct route found
+          </h2>
+
+          <p>
+            We couldn't find a direct bus route between
+            <strong>{{ source.name }}</strong>
+            and
+            <strong>{{ destination.name }}</strong>.
+          </p>
+
+          <p>
+            Try another pair of stops.
+          </p>
+
+        </section>
+
+      {% endif %}
+
+    {% endif %}
+
+  </div>
+
+</section>
+
+{% endblock %}
+
+
+{% block extra_scripts %}
+
+  {% if map_script %}
+
+    <script>
+      {{ map_script|safe }}
+    </script>
+
+  {% endif %}
+
+
+  <script>
+    function swapLocations() {
+      const source = document.getElementById("source");
+      const destination = document.getElementById("destination");
+
+      const sourceValue = source.value;
+      const destinationValue = destination.value;
+
+      source.value = destinationValue;
+      destination.value = sourceValue;
+    }
+  </script>
+
+{% endblock %}
