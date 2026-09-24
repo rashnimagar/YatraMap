@@ -1,8 +1,10 @@
 from django.shortcuts import render
 
 from .models import BusStop
+from .services.network_route_map import create_network_route_map
 from .services.route_map import create_route_map
 from .services.route_search import find_routes
+from .services.transit_router import find_shortest_path
 
 
 def route_search(request):
@@ -13,6 +15,7 @@ def route_search(request):
     selected_route_id = request.GET.get("route")
 
     results = []
+    network_result = None
     source = None
     destination = None
     selected_result = None
@@ -20,6 +23,10 @@ def route_search(request):
     map_header = None
     map_html = None
     map_script = None
+
+    network_map_header = None
+    network_map_html = None
+    network_map_script = None
 
     if source_id and destination_id:
         try:
@@ -34,6 +41,11 @@ def route_search(request):
             )
 
             results = find_routes(source, destination)
+
+            network_result = find_shortest_path(
+                source,
+                destination,
+            )
 
             # If the user selected a specific route,
             # find that route among the valid search results.
@@ -67,6 +79,14 @@ def route_search(request):
                 map_html = route_map.get_root().html.render()
                 map_script = route_map.get_root().script.render()
 
+            if network_result and network_result.segments and network_result.transfers > 0:
+                network_map = create_network_route_map(network_result)
+                network_map.get_root().render()
+
+                network_map_header = network_map.get_root().header.render()
+                network_map_html = network_map.get_root().html.render()
+                network_map_script = network_map.get_root().script.render()
+
         except BusStop.DoesNotExist:
             source = None
             destination = None
@@ -76,10 +96,14 @@ def route_search(request):
         "source": source,
         "destination": destination,
         "results": results,
+        "network_result": network_result,
         "selected_result": selected_result,
         "map_header": map_header,
         "map_html": map_html,
         "map_script": map_script,
+        "network_map_header": network_map_header,
+        "network_map_html": network_map_html,
+        "network_map_script": network_map_script,
     }
 
     return render(

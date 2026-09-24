@@ -1,28 +1,80 @@
 {% extends "routes/base.html" %}
 
 {% block extra_head %}
-
   {% if map_header %}
     {{ map_header|safe }}
   {% endif %}
 
+  {% if network_map_header %}
+    {{ network_map_header|safe }}
+  {% endif %}
+
+  <style>
+    /*
+     * Folium / Leaflet map containers need an explicit height.
+     * The network map gets its own dedicated dimensions so it
+     * cannot collapse inside the page layout.
+     */
+    .network-map-section .map-card {
+      width: 100%;
+      height: 520px;
+      min-height: 520px;
+      overflow: hidden;
+    }
+
+    .network-map-section .route-map {
+      width: 100%;
+      height: 100%;
+      min-height: 520px;
+      position: relative;
+    }
+
+    .network-map-section .folium-map {
+      width: 100% !important;
+      height: 520px !important;
+      min-height: 520px !important;
+    }
+
+    @media (max-width: 640px) {
+      .network-map-section .map-card {
+        height: 420px;
+        min-height: 420px;
+      }
+
+      .network-map-section .route-map {
+        min-height: 420px;
+      }
+
+      .network-map-section .folium-map {
+        height: 420px !important;
+        min-height: 420px !important;
+      }
+    }
+  </style>
 {% endblock %}
+
 
 {% block title %}
   YatraMap — Bus Route Search
 {% endblock %}
 
+
 {% block content %}
-
 <section class="route-page">
-
   <div class="container">
 
-    <!-- Page introduction -->
-    <div class="page-intro">
-      <p class="eyebrow">KATHMANDU VALLEY TRANSIT</p>
+    <!-- ========================================================= -->
+    <!-- PAGE INTRODUCTION                                         -->
+    <!-- ========================================================= -->
 
-      <h1>Find your bus route</h1>
+    <div class="page-intro">
+      <p class="eyebrow">
+        KATHMANDU VALLEY TRANSIT
+      </p>
+
+      <h1>
+        Find your bus route
+      </h1>
 
       <p class="page-description">
         Search between bus stops and discover available routes,
@@ -31,16 +83,23 @@
     </div>
 
 
-    <!-- Search panel -->
-    <section class="search-panel" aria-label="Bus route search">
+    <!-- ========================================================= -->
+    <!-- SEARCH PANEL                                               -->
+    <!-- ========================================================= -->
 
-      <form method="get" class="route-search-form">
+    <section
+      class="search-panel"
+      aria-label="Bus route search"
+    >
+      <form
+        method="get"
+        class="route-search-form"
+      >
 
         <div class="search-fields">
 
           <!-- From -->
           <div class="field-group">
-
             <label for="source">
               From
             </label>
@@ -65,7 +124,6 @@
                 </option>
               {% endfor %}
             </select>
-
           </div>
 
 
@@ -83,7 +141,6 @@
 
           <!-- To -->
           <div class="field-group">
-
             <label for="destination">
               To
             </label>
@@ -108,34 +165,37 @@
                 </option>
               {% endfor %}
             </select>
-
           </div>
 
         </div>
 
 
         <div class="search-actions">
-
           <button
             type="submit"
             class="find-route-button"
           >
-            <span>Find Route</span>
-            <span aria-hidden="true">→</span>
-          </button>
+            <span>
+              Find Route
+            </span>
 
+            <span aria-hidden="true">
+              →
+            </span>
+          </button>
         </div>
 
       </form>
-
     </section>
 
 
     {% if source and destination %}
 
-      <!-- Search summary -->
-      <section class="search-summary">
+      <!-- ======================================================= -->
+      <!-- SEARCH SUMMARY                                           -->
+      <!-- ======================================================= -->
 
+      <section class="search-summary">
         <div>
           <span class="summary-label">
             ROUTE SEARCH
@@ -143,7 +203,11 @@
 
           <h2>
             {{ source.name }}
-            <span aria-hidden="true">→</span>
+
+            <span aria-hidden="true">
+              →
+            </span>
+
             {{ destination.name }}
           </h2>
         </div>
@@ -155,25 +219,26 @@
             found
           </span>
         {% endif %}
-
       </section>
 
 
-      {% if results %}
+      <!-- ======================================================= -->
+      <!-- DIRECT ROUTE RESULTS                                     -->
+      <!-- ======================================================= -->
 
-        <!-- Route results -->
+      {% if results %}
         <section class="route-results">
 
           <div class="section-heading">
-
             <div>
-              <p class="eyebrow">AVAILABLE ROUTES</p>
+              <p class="eyebrow">
+                AVAILABLE ROUTES
+              </p>
 
               <h2>
                 Choose your route
               </h2>
             </div>
-
           </div>
 
 
@@ -182,12 +247,15 @@
             {% for result in results %}
 
               <article
-                class="route-card
-                {% if selected_result and selected_result.route.id == result.route.id %}
-                  route-card-selected
-                {% endif %}"
+                class="
+                  route-card
+                  {% if selected_result and selected_result.route.id == result.route.id %}
+                    route-card-selected
+                  {% endif %}
+                "
               >
 
+                <!-- Route header -->
                 <div class="route-card-header">
 
                   <div class="route-identity">
@@ -229,6 +297,7 @@
                 </div>
 
 
+                <!-- Route metrics -->
                 <div class="route-metrics">
 
                   <div class="route-metric">
@@ -270,6 +339,7 @@
                 </div>
 
 
+                <!-- Route stops -->
                 <div class="stop-list">
 
                   <div class="stop-list-header">
@@ -279,9 +349,7 @@
                   </div>
 
                   <ol>
-
                     {% for route_stop in result.stops %}
-
                       <li>
                         <span class="stop-marker"></span>
 
@@ -289,9 +357,7 @@
                           {{ route_stop.stop.name }}
                         </span>
                       </li>
-
                     {% endfor %}
-
                   </ol>
 
                 </div>
@@ -301,61 +367,301 @@
             {% endfor %}
 
           </div>
+        </section>
+      {% endif %}
+
+
+      <!-- ======================================================= -->
+      <!-- NETWORK JOURNEY                                          -->
+      <!-- ======================================================= -->
+
+      {% if network_result and network_result.segments %}
+
+        <section class="network-results">
+
+          <div class="section-heading">
+
+            <div>
+              <p class="eyebrow">
+                NETWORK JOURNEY
+              </p>
+
+              <h2>
+                Best connected journey
+              </h2>
+            </div>
+
+            <span class="network-summary">
+              {{ network_result.transfers }}
+              transfer{{ network_result.transfers|pluralize }}
+            </span>
+
+          </div>
+
+
+          <article class="network-card">
+
+            <!-- Journey metrics -->
+            <div class="network-metrics">
+
+              <div class="network-metric">
+                <span class="metric-label">
+                  Distance
+                </span>
+
+                <strong>
+                  {{ network_result.total_distance }} km
+                </strong>
+              </div>
+
+
+              <div class="network-metric">
+                <span class="metric-label">
+                  Transfers
+                </span>
+
+                <strong>
+                  {{ network_result.transfers }}
+                </strong>
+              </div>
+
+
+              <div class="network-metric">
+                <span class="metric-label">
+                  Bus routes
+                </span>
+
+                <strong>
+                  {{ network_result.segments|length }}
+                </strong>
+              </div>
+
+            </div>
+
+
+            <!-- Journey segments -->
+            <div class="journey-segments">
+
+              {% for segment in network_result.segments %}
+
+                <article class="journey-segment">
+
+                  <!-- Segment header -->
+                  <div class="journey-segment-header">
+
+                    <div class="route-identity">
+
+                      <span class="route-number">
+                        {{ segment.route.route_number }}
+                      </span>
+
+                      <div>
+                        <h3>
+                          {{ segment.route.name }}
+                        </h3>
+
+                        <p>
+                          {{ segment.operator.name }}
+                        </p>
+                      </div>
+
+                    </div>
+
+
+                    <span class="segment-distance">
+                      {{ segment.distance }} km
+                    </span>
+
+                  </div>
+
+
+                  <!-- Segment stops -->
+                  <div class="journey-stop-list">
+
+                    {% for stop in segment.stops %}
+
+                      <div class="journey-stop">
+
+                        <span
+                          class="journey-stop-marker"
+                          aria-hidden="true"
+                        ></span>
+
+                        <span class="journey-stop-name">
+                          {{ stop.name }}
+                        </span>
+
+                      </div>
+
+                    {% endfor %}
+
+                  </div>
+
+                </article>
+
+
+                <!-- Transfer between segments -->
+                {% if not forloop.last %}
+
+                  <div class="transfer-point">
+
+                    <span
+                      class="transfer-marker"
+                      aria-hidden="true"
+                    >
+                      ↕
+                    </span>
+
+                    <div>
+                      <strong>
+                        Transfer
+                      </strong>
+
+                      <span>
+                        Change bus route
+                      </span>
+                    </div>
+
+                  </div>
+
+                {% endif %}
+
+              {% endfor %}
+
+            </div>
+
+          </article>
 
         </section>
 
+      {% endif %}
 
-        <!-- Map -->
-        {% if selected_result and map_html %}
 
-          <section class="map-section">
+      <!-- ======================================================= -->
+      <!-- NETWORK JOURNEY MAP                                      -->
+      <!-- ======================================================= -->
 
-            <div class="section-heading">
+      {% if network_result and network_result.transfers and network_map_html %}
 
-              <div>
-                <p class="eyebrow">MAP</p>
+        <section class="map-section network-map-section">
 
-                <h2>
-                  {{ selected_result.route.route_number }}
-                  route map
-                </h2>
-              </div>
+          <div class="section-heading">
 
-              <span class="map-route-name">
-                {{ selected_result.route.name }}
-              </span>
+            <div>
+              <p class="eyebrow">
+                JOURNEY MAP
+              </p>
+
+              <h2>
+                Connected journey map
+              </h2>
+            </div>
+
+            <span class="map-route-name">
+              {{ network_result.segments|length }}
+              bus routes
+            </span>
+
+          </div>
+
+
+          <div
+            class="map-card"
+            style="
+              width: 100%;
+              height: 520px;
+              min-height: 520px;
+              overflow: hidden;
+            "
+          >
+
+            <div
+              id="network-route-map"
+              class="route-map"
+              style="
+                width: 100%;
+                height: 100%;
+                min-height: 520px;
+                position: relative;
+              "
+            >
+              {{ network_map_html|safe }}
+            </div>
+
+          </div>
+
+        </section>
+
+      {% endif %}
+
+
+      <!-- ======================================================= -->
+      <!-- DIRECT ROUTE MAP                                         -->
+      <!-- ======================================================= -->
+
+      {% if selected_result and map_html %}
+
+        <section class="map-section">
+
+          <div class="section-heading">
+
+            <div>
+              <p class="eyebrow">
+                MAP
+              </p>
+
+              <h2>
+                {{ selected_result.route.route_number }}
+                route map
+              </h2>
 
             </div>
 
 
-            <div class="map-card">
+            <span class="map-route-name">
+              {{ selected_result.route.name }}
+            </span>
 
-              <div id="route-map" class="route-map">
-                {{ map_html|safe }}
-              </div>
+          </div>
 
+
+          <div class="map-card">
+
+            <div
+              id="route-map"
+              class="route-map"
+            >
+              {{ map_html|safe }}
             </div>
 
-          </section>
+          </div>
 
-        {% endif %}
+        </section>
+
+      {% endif %}
 
 
-      {% else %}
+      <!-- ======================================================= -->
+      <!-- NO JOURNEY FOUND                                         -->
+      <!-- ======================================================= -->
 
-        <!-- No route -->
+      {% if not results and not network_result %}
+
         <section class="empty-state">
 
-          <div class="empty-icon" aria-hidden="true">
+          <div
+            class="empty-icon"
+            aria-hidden="true"
+          >
             —
           </div>
 
           <h2>
-            No direct route found
+            No route found
           </h2>
 
           <p>
-            We couldn't find a direct bus route between
+            We couldn't find a bus journey between
             <strong>{{ source.name }}</strong>
             and
             <strong>{{ destination.name }}</strong>.
@@ -372,27 +678,59 @@
     {% endif %}
 
   </div>
-
 </section>
-
 {% endblock %}
 
 
 {% block extra_scripts %}
 
-  {% if map_script %}
+  <!-- ========================================================= -->
+  <!-- DIRECT ROUTE MAP SCRIPT                                   -->
+  <!-- ========================================================= -->
 
+  {% if map_script %}
     <script>
       {{ map_script|safe }}
     </script>
-
   {% endif %}
 
+
+  <!-- ========================================================= -->
+  <!-- NETWORK ROUTE MAP SCRIPT                                  -->
+  <!-- ========================================================= -->
+
+  {% if network_map_script %}
+    <script>
+      {{ network_map_script|safe }}
+
+      /*
+       * Folium/Leaflet may initialize while the surrounding layout
+       * is still settling. Trigger a resize after initialization
+       * so Leaflet recalculates the map dimensions.
+       */
+      setTimeout(function () {
+        window.dispatchEvent(new Event("resize"));
+      }, 100);
+
+      setTimeout(function () {
+        window.dispatchEvent(new Event("resize"));
+      }, 500);
+    </script>
+  {% endif %}
+
+
+  <!-- ========================================================= -->
+  <!-- PAGE INTERACTION                                          -->
+  <!-- ========================================================= -->
 
   <script>
     function swapLocations() {
       const source = document.getElementById("source");
       const destination = document.getElementById("destination");
+
+      if (!source || !destination) {
+        return;
+      }
 
       const sourceValue = source.value;
       const destinationValue = destination.value;

@@ -7,7 +7,9 @@ from .models import BusRoute, BusStop, Operator, RouteStop
 from .services.route_search import find_routes
 
 from routes.services.transit_router import (
+    build_segments,
     build_transit_graph,
+    count_transfers,
     find_shortest_path,
 )
 
@@ -972,4 +974,430 @@ class TransitRouterTests(TestCase):
         self.assertEqual(
             path.routing_cost,
             14.0,
+        )
+
+    def test_build_segments_empty_edges(self):
+        segments = build_segments([])
+
+        self.assertEqual(
+            segments,
+            [],
+        )
+
+
+    def test_build_segments_single_route(self):
+        route = self.create_route(
+            self.operator_a,
+            "A",
+            "Godawari - Lagankhel",
+            [
+                (self.godawari, 0),
+                (self.satdobato, 4),
+                (self.lagankhel, 3),
+            ],
+        )
+
+        path = find_shortest_path(
+            self.godawari,
+            self.lagankhel,
+        )
+
+        self.assertIsNotNone(path)
+
+        self.assertEqual(
+            len(path.segments),
+            1,
+        )
+
+        segment = path.segments[0]
+
+        self.assertEqual(
+            segment.route,
+            route,
+        )
+
+        self.assertEqual(
+            segment.operator,
+            self.operator_a,
+        )
+
+        self.assertEqual(
+            segment.stops,
+            [
+                self.godawari,
+                self.satdobato,
+                self.lagankhel,
+            ],
+        )
+
+        self.assertEqual(
+            segment.distance,
+            7.0,
+        )
+
+
+    def test_build_segments_two_routes(self):
+        route_a = self.create_route(
+            self.operator_a,
+            "A",
+            "Godawari - Satdobato",
+            [
+                (self.godawari, 0),
+                (self.satdobato, 4),
+            ],
+        )
+
+        route_b = self.create_route(
+            self.operator_b,
+            "B",
+            "Satdobato - Bhaktapur",
+            [
+                (self.satdobato, 0),
+                (self.lagankhel, 3),
+                (self.bhaktapur, 5),
+            ],
+        )
+
+        path = find_shortest_path(
+            self.godawari,
+            self.bhaktapur,
+        )
+
+        self.assertIsNotNone(path)
+
+        self.assertEqual(
+            len(path.segments),
+            2,
+        )
+
+        first_segment = path.segments[0]
+        second_segment = path.segments[1]
+
+        self.assertEqual(
+            first_segment.route,
+            route_a,
+        )
+
+        self.assertEqual(
+            first_segment.operator,
+            self.operator_a,
+        )
+
+        self.assertEqual(
+            first_segment.stops,
+            [
+                self.godawari,
+                self.satdobato,
+            ],
+        )
+
+        self.assertEqual(
+            first_segment.distance,
+            4.0,
+        )
+
+        self.assertEqual(
+            second_segment.route,
+            route_b,
+        )
+
+        self.assertEqual(
+            second_segment.operator,
+            self.operator_b,
+        )
+
+        self.assertEqual(
+            second_segment.stops,
+            [
+                self.satdobato,
+                self.lagankhel,
+                self.bhaktapur,
+            ],
+        )
+
+        self.assertEqual(
+            second_segment.distance,
+            8.0,
+        )
+
+
+    def test_build_segments_three_routes(self):
+        route_a = self.create_route(
+            self.operator_a,
+            "A",
+            "Godawari - Satdobato",
+            [
+                (self.godawari, 0),
+                (self.satdobato, 4),
+            ],
+        )
+
+        route_b = self.create_route(
+            self.operator_b,
+            "B",
+            "Satdobato - Lagankhel",
+            [
+                (self.satdobato, 0),
+                (self.lagankhel, 3),
+            ],
+        )
+
+        route_c = self.create_route(
+            self.operator_a,
+            "C",
+            "Lagankhel - Bhaktapur",
+            [
+                (self.lagankhel, 0),
+                (self.bhaktapur, 5),
+            ],
+        )
+
+        path = find_shortest_path(
+            self.godawari,
+            self.bhaktapur,
+            transfer_penalty=0.0,
+        )
+
+        self.assertIsNotNone(path)
+
+        self.assertEqual(
+            len(path.segments),
+            3,
+        )
+
+        self.assertEqual(
+            path.segments[0].route,
+            route_a,
+        )
+
+        self.assertEqual(
+            path.segments[0].stops,
+            [
+                self.godawari,
+                self.satdobato,
+            ],
+        )
+
+        self.assertEqual(
+            path.segments[1].route,
+            route_b,
+        )
+
+        self.assertEqual(
+            path.segments[1].stops,
+            [
+                self.satdobato,
+                self.lagankhel,
+            ],
+        )
+
+        self.assertEqual(
+            path.segments[2].route,
+            route_c,
+        )
+
+        self.assertEqual(
+            path.segments[2].stops,
+            [
+                self.lagankhel,
+                self.bhaktapur,
+            ],
+        )
+
+        self.assertEqual(
+            [segment.distance for segment in path.segments],
+            [4.0, 3.0, 5.0],
+        )
+
+
+    def test_same_route_edges_remain_one_segment(self):
+        route = self.create_route(
+            self.operator_a,
+            "A",
+            "Godawari - Bhaktapur",
+            [
+                (self.godawari, 0),
+                (self.satdobato, 4),
+                (self.lagankhel, 3),
+                (self.bhaktapur, 5),
+            ],
+        )
+
+        path = find_shortest_path(
+            self.godawari,
+            self.bhaktapur,
+        )
+
+        self.assertIsNotNone(path)
+
+        self.assertEqual(
+            len(path.segments),
+            1,
+        )
+
+        self.assertEqual(
+            path.segments[0].route,
+            route,
+        )
+
+        self.assertEqual(
+            path.segments[0].stops,
+            [
+                self.godawari,
+                self.satdobato,
+                self.lagankhel,
+                self.bhaktapur,
+            ],
+        )
+
+        self.assertEqual(
+            path.segments[0].distance,
+            12.0,
+        )
+
+
+class RouteSearchNetworkViewTests(TestCase):
+    def setUp(self):
+        self.operator_a = Operator.objects.create(
+            name="Operator A",
+        )
+        self.operator_b = Operator.objects.create(
+            name="Operator B",
+        )
+
+        self.godawari = BusStop.objects.create(
+            name="Godawari",
+            latitude=27.593,
+            longitude=85.382,
+        )
+        self.satdobato = BusStop.objects.create(
+            name="Satdobato",
+            latitude=27.658,
+            longitude=85.324,
+        )
+        self.lagankhel = BusStop.objects.create(
+            name="Lagankhel",
+            latitude=27.666,
+            longitude=85.324,
+        )
+
+        self.route_a = BusRoute.objects.create(
+            operator=self.operator_a,
+            route_number="A",
+            name="Godawari - Satdobato",
+            base_fare=20,
+            is_bidirectional=True,
+        )
+
+        self.route_b = BusRoute.objects.create(
+            operator=self.operator_b,
+            route_number="B",
+            name="Satdobato - Lagankhel",
+            base_fare=20,
+            is_bidirectional=True,
+        )
+
+        RouteStop.objects.create(
+            route=self.route_a,
+            stop=self.godawari,
+            sequence=1,
+            distance_from_previous=0,
+        )
+        RouteStop.objects.create(
+            route=self.route_a,
+            stop=self.satdobato,
+            sequence=2,
+            distance_from_previous=4,
+        )
+
+        RouteStop.objects.create(
+            route=self.route_b,
+            stop=self.satdobato,
+            sequence=1,
+            distance_from_previous=0,
+        )
+        RouteStop.objects.create(
+            route=self.route_b,
+            stop=self.lagankhel,
+            sequence=2,
+            distance_from_previous=3,
+        )
+
+    def test_route_search_view_returns_network_result(self):
+        response = self.client.get(
+            reverse("route_search"),
+            {
+                "source": self.godawari.id,
+                "destination": self.lagankhel.id,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        network_result = response.context["network_result"]
+
+        self.assertIsNotNone(network_result)
+        self.assertEqual(network_result.total_distance, 7.0)
+        self.assertEqual(network_result.transfers, 1)
+        self.assertEqual(len(network_result.segments), 2)
+
+    def test_route_search_view_renders_network_journey(self):
+        response = self.client.get(
+            reverse("route_search"),
+            {
+                "source": self.godawari.id,
+                "destination": self.lagankhel.id,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(
+            response,
+            "NETWORK JOURNEY",
+        )
+        self.assertContains(
+            response,
+            "Best connected journey",
+        )
+        self.assertContains(
+            response,
+            "Change bus route",
+        )
+
+    def test_route_search_view_has_no_network_result_when_unreachable(self):
+        unreachable_stop = BusStop.objects.create(
+            name="Unreachable",
+            latitude=27.700,
+            longitude=85.400,
+        )
+
+        response = self.client.get(
+            reverse("route_search"),
+            {
+                "source": self.godawari.id,
+                "destination": unreachable_stop.id,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context["network_result"])
+
+    def test_route_search_view_preserves_direct_routes(self):
+        response = self.client.get(
+            reverse("route_search"),
+            {
+                "source": self.godawari.id,
+                "destination": self.satdobato.id,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        results = response.context["results"]
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(
+            results[0].route,
+            self.route_a,
         )
