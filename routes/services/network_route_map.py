@@ -233,6 +233,8 @@ def create_network_route_map(network_result: TransitPath) -> folium.Map:
             padding=(30, 30),
         )
 
+    _add_network_legend(route_map, network_result)
+
     return route_map
 
 
@@ -258,3 +260,157 @@ def _get_transfer_stop_ids(
             transfer_stop_ids.add(current_edge.from_stop.id)
 
     return transfer_stop_ids
+
+def _add_network_legend(
+    route_map: folium.Map,
+    network_result: TransitPath,
+) -> None:
+    """
+    Add a dynamic legend describing the routes and markers
+    used by the network journey map.
+    """
+
+    legend_rows = []
+
+    for segment_index, segment in enumerate(network_result.segments):
+        color = _SEGMENT_COLORS[
+            segment_index % len(_SEGMENT_COLORS)
+        ]
+
+        legend_rows.append(
+            f"""
+            <div style="
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 7px;
+            ">
+                <span style="
+                    display: inline-block;
+                    width: 28px;
+                    height: 5px;
+                    border-radius: 999px;
+                    background: {color};
+                    flex-shrink: 0;
+                "></span>
+
+                <span>
+                    <strong>
+                        Route {segment.route.route_number}
+                    </strong>
+                    — {segment.route.name}
+                </span>
+            </div>
+            """
+        )
+
+    legend_html = f"""
+    <div style="
+        position: fixed;
+        bottom: 28px;
+        left: 28px;
+        z-index: 9999;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 14px 16px;
+        border-radius: 10px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.20);
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        line-height: 1.4;
+        min-width: 230px;
+        max-width: 320px;
+    ">
+
+        <div style="
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #111827;
+        ">
+            Network Journey
+        </div>
+
+        {''.join(legend_rows)}
+
+        <div style="
+            border-top: 1px solid #e5e7eb;
+            margin: 10px 0;
+        "></div>
+
+        <div style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        ">
+            <span style="
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #16a34a;
+                color: white;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 10px;
+            ">
+                S
+            </span>
+
+            <span>Starting stop</span>
+        </div>
+
+        <div style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        ">
+            <span style="
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #dc2626;
+                color: white;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 10px;
+            ">
+                D
+            </span>
+
+            <span>Destination</span>
+        </div>
+
+        <div style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        ">
+            <span style="
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #f59e0b;
+                color: white;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 800;
+                font-size: 10px;
+            ">
+                T
+            </span>
+
+            <span>Transfer point</span>
+        </div>
+
+    </div>
+    """
+
+    route_map.get_root().html.add_child(
+        folium.Element(legend_html)
+    )
