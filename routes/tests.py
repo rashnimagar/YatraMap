@@ -1401,3 +1401,184 @@ class RouteSearchNetworkViewTests(TestCase):
             results[0].route,
             self.route_a,
         )
+
+class NearbyStopsTests(TestCase):
+    def setUp(self):
+        self.near_stop = BusStop.objects.create(
+            name="Near Stop",
+            latitude=Decimal("27.6650"),
+            longitude=Decimal("85.3240"),
+        )
+
+        self.middle_stop = BusStop.objects.create(
+            name="Middle Stop",
+            latitude=Decimal("27.6750"),
+            longitude=Decimal("85.3240"),
+        )
+
+        self.far_stop = BusStop.objects.create(
+            name="Far Stop",
+            latitude=Decimal("27.7000"),
+            longitude=Decimal("85.3240"),
+        )
+
+    def test_returns_nearby_stops_successfully(self):
+        response = self.client.get(
+            reverse("nearby_stops"),
+            {
+                "lat": "27.6650",
+                "lng": "85.3240",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
+        self.assertIn("results", data)
+        self.assertEqual(len(data["results"]), 3)
+
+    def test_results_are_sorted_by_distance(self):
+        response = self.client.get(
+            reverse("nearby_stops"),
+            {
+                "lat": "27.6650",
+                "lng": "85.3240",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        results = response.json()["results"]
+
+        self.assertEqual(
+            [result["name"] for result in results],
+            [
+                "Near Stop",
+                "Middle Stop",
+                "Far Stop",
+            ],
+        )
+
+        self.assertEqual(results[0]["distance_km"], 0.0)
+
+        self.assertLess(
+            results[0]["distance_km"],
+            results[1]["distance_km"],
+        )
+
+        self.assertLess(
+            results[1]["distance_km"],
+            results[2]["distance_km"],
+        )
+
+    def test_inactive_stops_are_excluded(self):
+        self.near_stop.is_active = False
+        self.near_stop.save()
+
+        response = self.client.get(
+            reverse("nearby_stops"),
+            {
+                "lat": "27.6650",
+                "lng": "85.3240",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        results = response.json()["results"]
+
+        result_names = [result["name"] for result in results]
+
+        self.assertNotIn("Near Stop", result_names)
+
+    def test_missing_coordinates_return_bad_request(self):
+        response = self.client.get(
+            reverse("nearby_stops"),
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+        data = response.json()
+
+        self.assertEqual(
+            data["error"],
+            "Latitude and longitude are required.",
+        )
+
+    def test_invalid_coordinates_return_bad_request(self):
+        response = self.client.get(
+            reverse("nearby_stops"),
+            {
+                "lat": "not-a-number",
+                "lng": "85.3240",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+        data = response.json()
+
+        self.assertEqual(
+            data["error"],
+            "Latitude and longitude must be valid numbers.",
+        )
+
+    def test_latitude_out_of_range_returns_bad_request(self):
+        response = self.client.get(
+            reverse("nearby_stops"),
+            {
+                "lat": "91",
+                "lng": "85.3240",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+        data = response.json()
+
+        self.assertEqual(
+            data["error"],
+            "Latitude must be between -90 and 90.",
+        )
+
+    def test_longitude_out_of_range_returns_bad_request(self):
+        response = self.client.get(
+            reverse("nearby_stops"),
+            {
+                "lat": "27.6650",
+                "lng": "181",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+        data = response.json()
+
+        self.assertEqual(
+            data["error"],
+            "Longitude must be between -180 and 180.",
+        )
+
+    def test_returns_at_most_five_stops(self):
+        for index in range(6):
+            BusStop.objects.create(
+                name=f"Extra Stop {index}",
+                latitude=Decimal("27.6660") + Decimal(index) / Decimal("10000"),
+                longitude=Decimal("85.3240"),
+            )
+
+        response = self.client.get(
+            reverse("nearby_stops"),
+            {
+                "lat": "27.6650",
+                "lng": "85.3240",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        results = response.json()["results"]
+
+        self.assertLessEqual(len(results), 5)
+        self.assertEqual(len(results), 5)

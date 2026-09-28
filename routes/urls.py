@@ -1,8 +1,13 @@
 from django.urls import path
 
-from .views import route_search
+from . import views
 
 
 urlpatterns = [
-    path("", route_search, name="route_search"),
+    path("", views.route_search, name="route_search"),
+    path(
+        "api/nearby-stops/",
+        views.nearby_stops,
+        name="nearby_stops",
+    ),
 ]

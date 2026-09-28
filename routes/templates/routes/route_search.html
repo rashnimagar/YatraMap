@@ -9,429 +9,6 @@
     {{ network_map_header|safe }} 
   {% endif %}
 
-<style>
-  /*
-     * Folium / Leaflet map containers need an explicit height.
-     * The network map gets its own dedicated dimensions so it
-     * cannot collapse inside the page layout.
-     */
-
-  .network-map-section .map-card {
-    width: 100%;
-    height: 520px;
-    min-height: 520px;
-    overflow: hidden;
-  }
-
-  .network-map-section .route-map {
-    width: 100%;
-    height: 100%;
-    min-height: 520px;
-    position: relative;
-  }
-
-  .network-map-section .folium-map {
-    width: 100% !important;
-    height: 520px !important;
-    min-height: 520px !important;
-  }
-
-  @media (max-width: 640px) {
-    .network-map-section .map-card {
-      height: 420px;
-      min-height: 420px;
-    }
-
-    .network-map-section .route-map {
-      min-height: 420px;
-    }
-
-    .network-map-section .folium-map {
-      height: 420px !important;
-      min-height: 420px !important;
-    }
-  }
-
-  /* =========================================================
-    NETWORK JOURNEY — STRUCTURED TRANSIT UI
-    ========================================================= */
-
-  .network-results {
-    margin-top: 32px;
-  }
-
-  .network-results > article {
-    width: 100%;
-  }
-
-  /* Journey summary */
-
-  .network-summary {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
-    margin: 24px 0 32px;
-    padding: 20px 0;
-    border-top: 1px solid var(--color-border, #dfe5e8);
-    border-bottom: 1px solid var(--color-border, #dfe5e8);
-  }
-
-  .network-summary > div {
-    min-width: 0;
-  }
-
-  .network-summary-label {
-    display: block;
-    margin-bottom: 5px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #7b8794;
-  }
-
-  .network-summary-value {
-    display: block;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #17202a;
-  }
-
-  /* Journey segments */
-
-  .journey-segments {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    width: 100%;
-  }
-
-  .journey-segment {
-    position: relative;
-    width: 100%;
-    padding: 24px;
-    border: 1px solid #dfe5e8;
-    border-radius: 16px;
-    background: #ffffff;
-    box-shadow: 0 4px 16px rgba(23, 32, 42, 0.05);
-  }
-
-  /* Route header */
-
-  .journey-segment-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-
-  .journey-route-number {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: #e8f5f2;
-    color: #147565;
-    font-size: 0.9rem;
-    font-weight: 800;
-  }
-
-  .journey-route-info {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .journey-route-name {
-    margin: 0;
-    font-size: 1.1rem;
-    line-height: 1.3;
-    color: #17202a;
-  }
-
-  .journey-operator {
-    display: block;
-    margin-top: 4px;
-    font-size: 0.88rem;
-    color: #7b8794;
-  }
-
-  .journey-distance {
-    flex: 0 0 auto;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #17202a;
-    white-space: nowrap;
-  }
-
-  /* Boarding / transfer instruction */
-
-  .journey-instruction {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    margin: 0 0 20px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    background: #f5f8f8;
-  }
-
-  .journey-instruction strong {
-    font-size: 0.9rem;
-    color: #147565;
-  }
-
-  .journey-instruction span {
-    font-size: 0.88rem;
-    color: #66727d;
-  }
-
-  /* Stop timeline */
-
-  .journey-stops {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    padding-left: 6px;
-  }
-
-  .journey-stop {
-    position: relative;
-    display: flex;
-    align-items: center;
-    min-height: 42px;
-    padding-left: 30px;
-    font-size: 0.95rem;
-    color: #26323d;
-  }
-
-  .journey-stop::before {
-    content: "";
-    position: absolute;
-    left: 4px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: #d9e5e2;
-  }
-
-  .journey-stop:first-child::before {
-    top: 50%;
-  }
-
-  .journey-stop:last-child::before {
-    bottom: 50%;
-  }
-
-  .journey-stop::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 50%;
-    width: 10px;
-    height: 10px;
-    border: 3px solid #ffffff;
-    border-radius: 50%;
-    background: #147565;
-    box-shadow: 0 0 0 2px #b8d8d1;
-    transform: translateY(-50%);
-    z-index: 1;
-  }
-
-  /* Transfer point */
-
-  .transfer-point {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin: 0;
-    padding: 18px 20px;
-  }
-
-  .transfer-marker {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: #f59e0b;
-    color: #ffffff;
-    font-size: 0.8rem;
-    font-weight: 800;
-    box-shadow: 0 3px 8px rgba(245, 158, 11, 0.25);
-  }
-
-  .transfer-point > div {
-    min-width: 0;
-  }
-
-  .transfer-point strong {
-    display: block;
-    font-size: 0.92rem;
-    color: #17202a;
-  }
-
-  .transfer-point span {
-    display: block;
-    margin-top: 2px;
-    font-size: 0.85rem;
-    color: #7b8794;
-  }
-
-  /* Network map spacing */
-
-  .network-map-section {
-    margin-top: 36px;
-  }
-
-  .network-map-section .folium-map {
-    width: 100% !important;
-    height: 520px !important;
-    border-radius: 16px;
-    overflow: hidden;
-  }
-
-  /* Mobile */
-
-  @media (max-width: 640px) {
-    .network-summary {
-      grid-template-columns: 1fr;
-      gap: 16px;
-      padding: 18px 0;
-    }
-
-    .journey-segment {
-      padding: 18px;
-      border-radius: 14px;
-    }
-
-    .journey-segment-header {
-      gap: 12px;
-    }
-
-    .journey-route-number {
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
-    }
-
-    .journey-route-name {
-      font-size: 1rem;
-    }
-
-    .journey-distance {
-      font-size: 0.85rem;
-    }
-
-    .transfer-point {
-      padding: 14px 8px;
-    }
-
-    .network-map-section .folium-map {
-      height: 420px !important;
-      border-radius: 12px;
-    }
-  }
-
-  /* =========================================================
-    STOP AUTOCOMPLETE
-    ========================================================= */
-
-  .autocomplete-group {
-    position: relative;
-  }
-
-  .autocomplete-wrapper {
-    position: relative;
-    width: 100%;
-  }
-
-  .autocomplete-input {
-    width: 100%;
-    min-height: 52px;
-    padding: 0 16px;
-    border: 1px solid #d6dee2;
-    border-radius: 10px;
-    background: #ffffff;
-    color: #17202a;
-    font: inherit;
-    outline: none;
-    transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
-  }
-
-  .autocomplete-input::placeholder {
-    color: #8a959d;
-  }
-
-  .autocomplete-input:focus {
-    border-color: #147565;
-    box-shadow: 0 0 0 3px rgba(20, 117, 101, 0.12);
-  }
-
-  .autocomplete-suggestions {
-    position: absolute;
-    z-index: 1000;
-    top: calc(100% + 6px);
-    left: 0;
-    right: 0;
-    display: none;
-    max-height: 260px;
-    overflow-y: auto;
-    padding: 6px;
-    border: 1px solid #dce4e7;
-    border-radius: 12px;
-    background: #ffffff;
-    box-shadow: 0 12px 30px rgba(23, 32, 42, 0.14);
-  }
-
-  .autocomplete-suggestions.is-visible {
-    display: block;
-  }
-
-  .autocomplete-option {
-    width: 100%;
-    padding: 11px 12px;
-    border: 0;
-    border-radius: 8px;
-    background: transparent;
-    color: #26323d;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-
-  .autocomplete-option:hover,
-  .autocomplete-option:focus {
-    background: #eef7f5;
-    color: #147565;
-    outline: none;
-  }
-
-  .autocomplete-empty {
-    padding: 12px;
-    color: #7b8794;
-    font-size: 0.9rem;
-  }
-
-  @media (max-width: 640px) {
-    .autocomplete-input {
-      min-height: 50px;
-    }
-
-    .autocomplete-suggestions {
-      max-height: 220px;
-    }
-  }
-</style>
-
 {% endblock %} 
 
 {% block title %} YatraMap — Bus Route Search {% endblock %} 
@@ -552,6 +129,30 @@
           </button>
         </div>
       </form>
+
+      <section class="recent-searches" id="recent-searches" hidden>
+        <div class="section-heading recent-searches-heading">
+            <div>
+                <p class="eyebrow">RECENT SEARCHES</p>
+                <h2>Your recent routes</h2>
+            </div>
+
+            <button
+                type="button"
+                class="clear-recent-searches"
+                id="clear-recent-searches"
+            >
+                Clear
+            </button>
+        </div>
+
+        <div
+            class="recent-search-list"
+            id="recent-search-list"
+            aria-live="polite"
+        ></div>
+      </section>
+
     </section>
 
     {% if source and destination %}
@@ -1148,6 +749,311 @@
 
     destinationSearch.value = sourceText;
   }
+</script>
+
+<script>
+  /*
+   * =========================================================
+   * RECENT SEARCHES
+   * =========================================================
+   *
+   * Recent searches are stored locally in the user's browser.
+   * No database or Django backend changes are required.
+   */
+
+  const RECENT_SEARCHES_KEY = "yatraMapRecentSearches";
+  const MAX_RECENT_SEARCHES = 5;
+
+  function getRecentSearches() {
+    try {
+      const storedSearches = localStorage.getItem(RECENT_SEARCHES_KEY);
+
+      if (!storedSearches) {
+        return [];
+      }
+
+      const searches = JSON.parse(storedSearches);
+
+      return Array.isArray(searches) ? searches : [];
+    } catch (error) {
+      console.warn("Unable to read recent searches.", error);
+
+      return [];
+    }
+  }
+
+  function saveRecentSearch(sourceId, sourceName, destinationId, destinationName) {
+    if (
+      !sourceId ||
+      !sourceName ||
+      !destinationId ||
+      !destinationName
+    ) {
+      return;
+    }
+
+    const newSearch = {
+      sourceId: sourceId,
+      sourceName: sourceName,
+      destinationId: destinationId,
+      destinationName: destinationName,
+    };
+
+    let searches = getRecentSearches();
+
+    /*
+     * Remove an existing identical search so that
+     * repeated searches move to the top instead of
+     * creating duplicates.
+     */
+    searches = searches.filter(function (search) {
+      return !(
+        String(search.sourceId) === String(sourceId) &&
+        String(search.destinationId) === String(destinationId)
+      );
+    });
+
+    /*
+     * Put the newest search first.
+     */
+    searches.unshift(newSearch);
+
+    /*
+     * Keep only the latest searches.
+     */
+    searches = searches.slice(0, MAX_RECENT_SEARCHES);
+
+    try {
+      localStorage.setItem(
+        RECENT_SEARCHES_KEY,
+        JSON.stringify(searches)
+      );
+    } catch (error) {
+      console.warn("Unable to save recent search.", error);
+    }
+  }
+
+  function renderRecentSearches() {
+    const recentSection = document.getElementById("recent-searches");
+    const recentList = document.getElementById("recent-search-list");
+
+    if (!recentSection || !recentList) {
+      return;
+    }
+
+    const searches = getRecentSearches();
+
+    recentList.innerHTML = "";
+
+    if (searches.length === 0) {
+      recentSection.hidden = true;
+      return;
+    }
+
+    recentSection.hidden = false;
+
+    searches.forEach(function (search, index) {
+      const item = document.createElement("button");
+
+      item.type = "button";
+      item.className = "recent-search-item";
+
+      item.setAttribute(
+        "aria-label",
+        "Search from " +
+          search.sourceName +
+          " to " +
+          search.destinationName
+      );
+
+      item.innerHTML = `
+        <span class="recent-search-route">
+          <span class="recent-search-stop">
+            ${escapeRecentSearchText(search.sourceName)}
+          </span>
+
+          <span class="recent-search-arrow" aria-hidden="true">
+            →
+          </span>
+
+          <span class="recent-search-stop">
+            ${escapeRecentSearchText(search.destinationName)}
+          </span>
+        </span>
+
+        <span class="recent-search-icon" aria-hidden="true">
+          ↗
+        </span>
+      `;
+
+      item.addEventListener("click", function () {
+        loadRecentSearch(search);
+      });
+
+      recentList.appendChild(item);
+    });
+  }
+
+  /*
+   * Escape text before inserting it into innerHTML.
+   */
+  function escapeRecentSearchText(value) {
+    const element = document.createElement("div");
+
+    element.textContent = value || "";
+
+    return element.innerHTML;
+  }
+
+  function loadRecentSearch(search) {
+    const source = document.getElementById("source");
+    const destination = document.getElementById("destination");
+
+    const sourceSearch = document.getElementById("source-search");
+    const destinationSearch = document.getElementById(
+      "destination-search"
+    );
+
+    if (
+      !source ||
+      !destination ||
+      !sourceSearch ||
+      !destinationSearch
+    ) {
+      return;
+    }
+
+    source.value = search.sourceId;
+    destination.value = search.destinationId;
+
+    sourceSearch.value = search.sourceName;
+    destinationSearch.value = search.destinationName;
+
+    /*
+     * Scroll back to the search form so the user can
+     * immediately submit the restored journey.
+     */
+    if (sourceSearch.closest(".route-search-form")) {
+      sourceSearch.closest(".route-search-form").scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }
+
+  function clearRecentSearches() {
+    try {
+      localStorage.removeItem(RECENT_SEARCHES_KEY);
+    } catch (error) {
+      console.warn("Unable to clear recent searches.", error);
+    }
+
+    renderRecentSearches();
+  }
+
+  /*
+   * Save a search when the route form is submitted.
+   */
+  const recentSearchForm = document.querySelector(".route-search-form");
+
+  if (recentSearchForm) {
+    recentSearchForm.addEventListener("submit", function (event) {
+      const source = document.getElementById("source");
+      const destination = document.getElementById("destination");
+
+      const sourceSearch = document.getElementById("source-search");
+      const destinationSearch = document.getElementById(
+        "destination-search"
+      );
+
+      if (
+        event.defaultPrevented ||
+        !source ||
+        !destination ||
+        !sourceSearch ||
+        !destinationSearch
+      ) {
+        return;
+      }
+
+      if (
+        !source.value ||
+        !destination.value ||
+        !sourceSearch.value ||
+        !destinationSearch.value
+      ) {
+        return;
+      }
+
+      saveRecentSearch(
+        source.value,
+        sourceSearch.value,
+        destination.value,
+        destinationSearch.value
+      );
+    });
+  }
+
+  /*
+   * Clear button.
+   */
+  const clearRecentSearchesButton = document.getElementById(
+    "clear-recent-searches"
+  );
+
+  if (clearRecentSearchesButton) {
+    clearRecentSearchesButton.addEventListener(
+      "click",
+      clearRecentSearches
+    );
+  }
+
+  /*
+   * Record the current successful search when the results page loads.
+   * This makes Recent Searches reliable even if the browser navigates
+   * away before the submit event finishes.
+   */
+  function recordCurrentSearchFromPage() {
+    const source = document.getElementById("source");
+    const destination = document.getElementById("destination");
+
+    const sourceSearch = document.getElementById("source-search");
+    const destinationSearch = document.getElementById(
+      "destination-search"
+    );
+
+    if (
+      !source ||
+      !destination ||
+      !sourceSearch ||
+      !destinationSearch
+    ) {
+      return;
+    }
+
+    if (
+      !source.value ||
+      !destination.value ||
+      !sourceSearch.value ||
+      !destinationSearch.value
+    ) {
+      return;
+    }
+
+    saveRecentSearch(
+      source.value,
+      sourceSearch.value,
+      destination.value,
+      destinationSearch.value
+    );
+  }
+
+  recordCurrentSearchFromPage();
+
+  /*
+   * Render saved searches when the page loads.
+   */
+  renderRecentSearches();
 </script>
 
 {% endblock %}

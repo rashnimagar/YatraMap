@@ -1,3 +1,6 @@
+import math
+
+from django.http import JsonResponse
 from django.shortcuts import render
 
 from .models import BusStop
@@ -79,13 +82,23 @@ def route_search(request):
                 map_html = route_map.get_root().html.render()
                 map_script = route_map.get_root().script.render()
 
-            if network_result and network_result.segments and network_result.transfers > 0:
+            if (
+                network_result
+                and network_result.segments
+                and network_result.transfers > 0
+            ):
                 network_map = create_network_route_map(network_result)
                 network_map.get_root().render()
 
-                network_map_header = network_map.get_root().header.render()
-                network_map_html = network_map.get_root().html.render()
-                network_map_script = network_map.get_root().script.render()
+                network_map_header = (
+                    network_map.get_root().header.render()
+                )
+                network_map_html = (
+                    network_map.get_root().html.render()
+                )
+                network_map_script = (
+                    network_map.get_root().script.render()
+                )
 
         except BusStop.DoesNotExist:
             source = None
@@ -110,4 +123,126 @@ def route_search(request):
         request,
         "routes/route_search.html",
         context,
+    )
+
+
+def nearby_stops(request):
+    """
+    Return the nearest active bus stops to the supplied coordinates.
+
+    Expected query parameters:
+        lat=<latitude>
+        lng=<longitude>
+
+    Example:
+        /api/nearby-stops/?lat=27.673&lng=85.324
+
+    Returns up to five nearby active bus stops.
+    """
+
+    latitude = request.GET.get("lat")
+    longitude = request.GET.get("lng")
+
+    if latitude is None or longitude is None:
+        return JsonResponse(
+            {
+                "error": "Latitude and longitude are required.",
+            },
+            status=400,
+        )
+
+    try:
+        latitude = float(latitude)
+        longitude = float(longitude)
+    except (TypeError, ValueError):
+        return JsonResponse(
+            {
+                "error": "Latitude and longitude must be valid numbers.",
+            },
+            status=400,
+        )
+
+    if not -90 <= latitude <= 90:
+        return JsonResponse(
+            {
+                "error": "Latitude must be between -90 and 90.",
+            },
+            status=400,
+        )
+
+    if not -180 <= longitude <= 180:
+        return JsonResponse(
+            {
+                "error": "Longitude must be between -180 and 180.",
+            },
+            status=400,
+        )
+
+    # Earth's approximate radius in kilometres.
+    earth_radius_km = 6371.0
+
+    def haversine_distance(
+        latitude_1,
+        longitude_1,
+        latitude_2,
+        longitude_2,
+    ):
+        latitude_difference = math.radians(
+            latitude_2 - latitude_1
+        )
+
+        longitude_difference = math.radians(
+            longitude_2 - longitude_1
+        )
+
+        first_latitude = math.radians(latitude_1)
+        second_latitude = math.radians(latitude_2)
+
+        a = (
+            math.sin(latitude_difference / 2) ** 2
+            + math.cos(first_latitude)
+            * math.cos(second_latitude)
+            * math.sin(longitude_difference / 2) ** 2
+        )
+
+        c = 2 * math.atan2(
+            math.sqrt(a),
+            math.sqrt(1 - a),
+        )
+
+        return earth_radius_km * c
+
+    nearby = []
+
+    stops = BusStop.objects.filter(
+        is_active=True,
+    )
+
+    for stop in stops:
+        distance = haversine_distance(
+            latitude,
+            longitude,
+            float(stop.latitude),
+            float(stop.longitude),
+        )
+
+        nearby.append(
+            {
+                "id": stop.id,
+                "name": stop.name,
+                "latitude": float(stop.latitude),
+                "longitude": float(stop.longitude),
+                "distance_km": round(distance, 2),
+                "location_description": (
+                    stop.location_description
+                ),
+            }
+        )
+
+    nearby.sort(key=lambda stop: stop["distance_km"])
+
+    return JsonResponse(
+        {
+            "results": nearby[:5],
+        }
     )
