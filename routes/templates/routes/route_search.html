@@ -1,17 +1,16 @@
 {% extends "routes/base.html" %} 
 
 {% block extra_head %} 
-  {% if map_header %}
+  {% if map_header %} 
     {{ map_header|safe }} 
   {% endif %} 
-
   {% if network_map_header %} 
     {{ network_map_header|safe }} 
-  {% endif %}
-
+  {% endif %} 
 {% endblock %} 
 
-{% block title %} YatraMap — Bus Route Search {% endblock %} 
+{% block title %} YatraMap — Bus Route Search 
+{% endblock %} 
 
 {% block content %}
 
@@ -130,29 +129,56 @@
         </div>
       </form>
 
-      <section class="recent-searches" id="recent-searches" hidden>
-        <div class="section-heading recent-searches-heading">
-            <div>
-                <p class="eyebrow">RECENT SEARCHES</p>
-                <h2>Your recent routes</h2>
-            </div>
+      <section class="nearby-stops-section" id="nearby-stops">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">NEARBY STOPS</p>
+            <h2>Find bus stops near you</h2>
+            <p class="section-description">
+              Use your location to discover the closest active bus stops.
+            </p>
+          </div>
 
-            <button
-                type="button"
-                class="clear-recent-searches"
-                id="clear-recent-searches"
-            >
-                Clear
-            </button>
+          <button
+            type="button"
+            class="nearby-stops-button"
+            id="find-nearby-stops"
+          >
+            Find nearby stops
+          </button>
         </div>
 
         <div
-            class="recent-search-list"
-            id="recent-search-list"
-            aria-live="polite"
+          class="nearby-stops-status"
+          id="nearby-stops-status"
+          aria-live="polite"
         ></div>
+
+        <div class="nearby-stops-list" id="nearby-stops-list"></div>
       </section>
 
+      <section class="recent-searches" id="recent-searches" hidden>
+        <div class="section-heading recent-searches-heading">
+          <div>
+            <p class="eyebrow">RECENT SEARCHES</p>
+            <h2>Your recent routes</h2>
+          </div>
+
+          <button
+            type="button"
+            class="clear-recent-searches"
+            id="clear-recent-searches"
+          >
+            Clear
+          </button>
+        </div>
+
+        <div
+          class="recent-search-list"
+          id="recent-search-list"
+          aria-live="polite"
+        ></div>
+      </section>
     </section>
 
     {% if source and destination %}
@@ -304,7 +330,7 @@
         </div>
 
         <span class="network-summary">
-          {{ network_result.transfers }} transfer
+          {{ network_result.transfers }} transfer 
           {{ network_result.transfers|pluralize }}
         </span>
       </div>
@@ -516,14 +542,13 @@
 <!-- ========================================================= -->
 
 <script id="yatra-map-stops" type="application/json">
-[
-  {% for stop in stops %}
-    {
-      "id": "{{ stop.id }}",
-      "name": "{{ stop.name|escapejs }}"
-    }{% if not forloop.last %},{% endif %}
-  {% endfor %}
-]
+  [
+    {% for stop in stops %}
+      { "id": "{{ stop.id }}", "name": "{{ stop.name|escapejs }}"}
+      {% if not forloop.last %},
+      {% endif %}
+    {% endfor %}
+  ]
 </script>
 
 <!-- ========================================================= -->
@@ -533,7 +558,7 @@
 {% if map_script %}
 
 <script>
-  {{ map_script|safe }}
+  {{ map_script | safe }}
 
   setTimeout(function () {
     window.dispatchEvent(new Event("resize"));
@@ -553,7 +578,7 @@
 {% if network_map_script %}
 
 <script>
-  {{ network_map_script|safe}}
+  {{ network_map_script | safe }}
 
   /*
    * Folium / Leaflet may initialize while the surrounding
@@ -578,7 +603,7 @@
 
 <script>
   const yatraMapStops = JSON.parse(
-    document.getElementById("yatra-map-stops").textContent
+    document.getElementById("yatra-map-stops").textContent,
   );
 
   function setupStopAutocomplete(searchId, hiddenId, suggestionsId) {
@@ -655,7 +680,7 @@
       });
 
       suggestions.classList.add("is-visible");
-    searchInput.setAttribute("aria-expanded", "true");
+      searchInput.setAttribute("aria-expanded", "true");
     }
 
     searchInput.addEventListener("input", function () {
@@ -690,7 +715,7 @@
   setupStopAutocomplete(
     "destination-search",
     "destination",
-    "destination-suggestions"
+    "destination-suggestions",
   );
 
   const routeSearchForm = document.querySelector(".route-search-form");
@@ -782,13 +807,13 @@
     }
   }
 
-  function saveRecentSearch(sourceId, sourceName, destinationId, destinationName) {
-    if (
-      !sourceId ||
-      !sourceName ||
-      !destinationId ||
-      !destinationName
-    ) {
+  function saveRecentSearch(
+    sourceId,
+    sourceName,
+    destinationId,
+    destinationName,
+  ) {
+    if (!sourceId || !sourceName || !destinationId || !destinationName) {
       return;
     }
 
@@ -824,10 +849,7 @@
     searches = searches.slice(0, MAX_RECENT_SEARCHES);
 
     try {
-      localStorage.setItem(
-        RECENT_SEARCHES_KEY,
-        JSON.stringify(searches)
-      );
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches));
     } catch (error) {
       console.warn("Unable to save recent search.", error);
     }
@@ -860,10 +882,7 @@
 
       item.setAttribute(
         "aria-label",
-        "Search from " +
-          search.sourceName +
-          " to " +
-          search.destinationName
+        "Search from " + search.sourceName + " to " + search.destinationName,
       );
 
       item.innerHTML = `
@@ -910,16 +929,9 @@
     const destination = document.getElementById("destination");
 
     const sourceSearch = document.getElementById("source-search");
-    const destinationSearch = document.getElementById(
-      "destination-search"
-    );
+    const destinationSearch = document.getElementById("destination-search");
 
-    if (
-      !source ||
-      !destination ||
-      !sourceSearch ||
-      !destinationSearch
-    ) {
+    if (!source || !destination || !sourceSearch || !destinationSearch) {
       return;
     }
 
@@ -962,9 +974,7 @@
       const destination = document.getElementById("destination");
 
       const sourceSearch = document.getElementById("source-search");
-      const destinationSearch = document.getElementById(
-        "destination-search"
-      );
+      const destinationSearch = document.getElementById("destination-search");
 
       if (
         event.defaultPrevented ||
@@ -989,7 +999,7 @@
         source.value,
         sourceSearch.value,
         destination.value,
-        destinationSearch.value
+        destinationSearch.value,
       );
     });
   }
@@ -998,14 +1008,11 @@
    * Clear button.
    */
   const clearRecentSearchesButton = document.getElementById(
-    "clear-recent-searches"
+    "clear-recent-searches",
   );
 
   if (clearRecentSearchesButton) {
-    clearRecentSearchesButton.addEventListener(
-      "click",
-      clearRecentSearches
-    );
+    clearRecentSearchesButton.addEventListener("click", clearRecentSearches);
   }
 
   /*
@@ -1018,16 +1025,9 @@
     const destination = document.getElementById("destination");
 
     const sourceSearch = document.getElementById("source-search");
-    const destinationSearch = document.getElementById(
-      "destination-search"
-    );
+    const destinationSearch = document.getElementById("destination-search");
 
-    if (
-      !source ||
-      !destination ||
-      !sourceSearch ||
-      !destinationSearch
-    ) {
+    if (!source || !destination || !sourceSearch || !destinationSearch) {
       return;
     }
 
@@ -1044,7 +1044,7 @@
       source.value,
       sourceSearch.value,
       destination.value,
-      destinationSearch.value
+      destinationSearch.value,
     );
   }
 
@@ -1054,6 +1054,186 @@
    * Render saved searches when the page loads.
    */
   renderRecentSearches();
+
+  const nearbyButton = document.getElementById("find-nearby-stops");
+  const nearbyStatus = document.getElementById("nearby-stops-status");
+  const nearbyList = document.getElementById("nearby-stops-list");
+
+  function setNearbyStatus(message) {
+    if (nearbyStatus) {
+      nearbyStatus.textContent = message;
+    }
+  }
+
+  function renderNearbyStops(stops) {
+    if (!nearbyList) {
+      return;
+    }
+
+    nearbyList.innerHTML = "";
+
+    if (!stops.length) {
+      setNearbyStatus("No active bus stops were found nearby.");
+      return;
+    }
+
+    setNearbyStatus(
+      `Found ${stops.length} nearby bus stop${stops.length === 1 ? "" : "s"}.`
+    );
+
+    stops.forEach(function (stop) {
+      const card = document.createElement("article");
+      card.className = "nearby-stop-card";
+
+      const details = document.createElement("div");
+      details.className = "nearby-stop-details";
+
+      const name = document.createElement("h3");
+      name.className = "nearby-stop-name";
+      name.textContent = stop.name;
+
+      const distance = document.createElement("p");
+      distance.className = "nearby-stop-distance";
+      distance.textContent =
+        stop.distance_km === 0
+          ? "At your location"
+          : `${stop.distance_km.toFixed(2)} km away`;
+
+      details.appendChild(name);
+      details.appendChild(distance);
+
+      if (stop.location_description) {
+        const description = document.createElement("p");
+        description.className = "nearby-stop-description";
+        description.textContent = stop.location_description;
+        details.appendChild(description);
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "nearby-stop-actions";
+
+      const fromButton = document.createElement("button");
+      fromButton.type = "button";
+      fromButton.className = "nearby-stop-action";
+      fromButton.textContent = "Use as From";
+
+      fromButton.addEventListener("click", function () {
+        setStopAsLocation("source", stop);
+      });
+
+      const toButton = document.createElement("button");
+      toButton.type = "button";
+      toButton.className = "nearby-stop-action";
+      toButton.textContent = "Use as To";
+
+      toButton.addEventListener("click", function () {
+        setStopAsLocation("destination", stop);
+      });
+
+      actions.appendChild(fromButton);
+      actions.appendChild(toButton);
+
+      card.appendChild(details);
+      card.appendChild(actions);
+
+      nearbyList.appendChild(card);
+    });
+  }
+
+  function setStopAsLocation(type, stop) {
+    const searchInput = document.getElementById(
+      type === "source" ? "source-search" : "destination-search"
+    );
+
+    const hiddenInput = document.getElementById(
+      type === "source" ? "source" : "destination"
+    );
+
+    if (!searchInput || !hiddenInput) {
+      return;
+    }
+
+    searchInput.value = stop.name;
+    hiddenInput.value = stop.id;
+
+    searchInput.dispatchEvent(new Event("change", { bubbles: true }));
+
+    searchInput.focus();
+  }
+
+  function findNearbyStops() {
+    if (!navigator.geolocation) {
+      setNearbyStatus(
+        "Location services are not supported by your browser."
+      );
+      return;
+    }
+
+    setNearbyStatus("Finding your location...");
+    nearbyList.innerHTML = "";
+
+    nearbyButton.disabled = true;
+    nearbyButton.textContent = "Finding stops...";
+
+    navigator.geolocation.getCurrentPosition(
+      function (position) {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        setNearbyStatus("Finding nearby bus stops...");
+
+        fetch(
+          `/api/nearby-stops/?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`
+        )
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error("Nearby stops request failed.");
+            }
+
+            return response.json();
+          })
+          .then(function (data) {
+            renderNearbyStops(data.results || []);
+          })
+          .catch(function () {
+            setNearbyStatus(
+              "Unable to load nearby stops. Please try again."
+            );
+          })
+          .finally(function () {
+            nearbyButton.disabled = false;
+            nearbyButton.textContent = "Find nearby stops";
+          });
+      },
+      function (error) {
+        nearbyButton.disabled = false;
+        nearbyButton.textContent = "Find nearby stops";
+
+        if (error.code === error.PERMISSION_DENIED) {
+          setNearbyStatus(
+            "Location permission was denied. Please allow location access and try again."
+          );
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setNearbyStatus(
+            "Your location could not be determined."
+          );
+        } else {
+          setNearbyStatus(
+            "Unable to determine your location. Please try again."
+          );
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000
+      }
+    );
+  }
+
+  if (nearbyButton) {
+    nearbyButton.addEventListener("click", findNearbyStops);
+  }
 </script>
 
 {% endblock %}
