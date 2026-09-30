@@ -3,6 +3,7 @@ import heapq
 from itertools import count
 
 from routes.models import BusStop, RouteStop
+from routes.services.route_search import calculate_estimated_minutes
 
 
 @dataclass
@@ -39,6 +40,7 @@ class TransitPath:
     edges: list[TransitEdge]
     total_distance: float
     transfers: int
+    estimated_minutes: int
     routing_cost: float
     segments: list[TransitSegment]
 
@@ -90,9 +92,7 @@ def build_transit_graph() -> dict[int, list[TransitEdge]]:
                 distance=distance,
             )
 
-            graph.setdefault(current.stop_id, []).append(
-                forward_edge
-            )
+            graph.setdefault(current.stop_id, []).append(forward_edge)
 
             if route.is_bidirectional:
                 reverse_edge = TransitEdge(
@@ -102,9 +102,7 @@ def build_transit_graph() -> dict[int, list[TransitEdge]]:
                     distance=distance,
                 )
 
-                graph.setdefault(following.stop_id, []).append(
-                    reverse_edge
-                )
+                graph.setdefault(following.stop_id, []).append(reverse_edge)
 
     return graph
 
@@ -134,6 +132,7 @@ def find_shortest_path(
             edges=[],
             total_distance=0.0,
             transfers=0,
+            estimated_minutes=0,
             routing_cost=0.0,
             segments=[],
         )
@@ -223,24 +222,14 @@ def find_shortest_path(
 
             # Boarding the first bus is not a transfer.
             is_transfer = (
-                current_route_id is not None
-                and current_route_id != next_route_id
+                current_route_id is not None and current_route_id != next_route_id
             )
 
-            transfer_count = (
-                best_transfers[current_state]
-                + int(is_transfer)
-            )
+            transfer_count = best_transfers[current_state] + int(is_transfer)
 
-            actual_distance = (
-                best_distance[current_state]
-                + edge.distance
-            )
+            actual_distance = best_distance[current_state] + edge.distance
 
-            routing_cost = (
-                actual_distance
-                + transfer_count * transfer_penalty
-            )
+            routing_cost = actual_distance + transfer_count * transfer_penalty
 
             next_state = (
                 edge.to_stop.id,
@@ -249,10 +238,7 @@ def find_shortest_path(
 
             existing_cost = best_cost.get(next_state)
 
-            if (
-                existing_cost is None
-                or routing_cost < existing_cost
-            ):
+            if existing_cost is None or routing_cost < existing_cost:
                 best_cost[next_state] = routing_cost
                 best_distance[next_state] = actual_distance
                 best_transfers[next_state] = transfer_count
@@ -300,6 +286,10 @@ def find_shortest_path(
             2,
         ),
         transfers=best_transfers[destination_state],
+        estimated_minutes=calculate_estimated_minutes(
+            best_distance[destination_state],
+            best_transfers[destination_state],
+        ),
         routing_cost=round(
             best_cost[destination_state],
             2,

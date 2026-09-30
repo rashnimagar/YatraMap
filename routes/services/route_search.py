@@ -8,6 +8,7 @@ class RouteSearchResult:
     route: BusRoute
     stops: list[RouteStop]
     total_distance: float
+    estimated_minutes: int
 
 
 def find_routes(source: BusStop, destination: BusStop) -> list[RouteSearchResult]:
@@ -30,10 +31,7 @@ def find_routes(source: BusStop, destination: BusStop) -> list[RouteSearchResult
         route__is_active=True,
     ).select_related("route")
 
-    destination_by_route = {
-        item.route_id: item
-        for item in destination_route_stops
-    }
+    destination_by_route = {item.route_id: item for item in destination_route_stops}
 
     results = []
 
@@ -69,6 +67,9 @@ def find_routes(source: BusStop, destination: BusStop) -> list[RouteSearchResult
             .order_by("sequence")
         )
         total_distance = calculate_distance(route_stops)
+        estimated_minutes = calculate_estimated_minutes(
+            total_distance,
+        )
 
         if destination_sequence < source_sequence:
             route_stops.reverse()
@@ -78,6 +79,7 @@ def find_routes(source: BusStop, destination: BusStop) -> list[RouteSearchResult
                 route=route,
                 stops=route_stops,
                 total_distance=total_distance,
+                estimated_minutes=estimated_minutes,
             )
         )
 
@@ -96,8 +98,40 @@ def calculate_distance(route_stops: list[RouteStop]) -> float:
         return 0.0
 
     total = sum(
-        float(route_stop.distance_from_previous or 0)
-        for route_stop in route_stops[1:]
+        float(route_stop.distance_from_previous or 0) for route_stop in route_stops[1:]
     )
 
     return round(total, 2)
+
+
+# Planning estimate only.
+# This is not live traffic or timetable data.
+AVERAGE_BUS_SPEED_KMH = 18.0
+TRANSFER_TIME_MINUTES = 5
+
+
+def calculate_estimated_minutes(
+    distance_km: float,
+    transfers: int = 0,
+) -> int:
+    """
+    Estimate journey time from distance and transfers.
+
+    The estimate is intentionally approximate because YatraMap
+    does not currently have live traffic, timetable, or GPS data.
+
+    Distance time is based on the configured average bus speed.
+    Each transfer adds a fixed transfer allowance.
+    """
+
+    if distance_km <= 0:
+        return 0
+
+    travel_minutes = (distance_km / AVERAGE_BUS_SPEED_KMH) * 60
+
+    transfer_minutes = transfers * TRANSFER_TIME_MINUTES
+
+    return max(
+        1,
+        round(travel_minutes + transfer_minutes),
+    )

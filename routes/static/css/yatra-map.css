@@ -584,6 +584,143 @@ button {
   font-weight: 750;
 }
 
+/* =========================================================
+   FAVORITE ROUTES
+   ========================================================= */
+
+.favorite-routes {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 1rem;
+  background: var(--surface-color, #ffffff);
+}
+
+.favorite-routes-heading {
+  margin-bottom: 1rem;
+}
+
+.favorite-route-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.favorite-route-item {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.favorite-route-load {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 0.9rem 1rem;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.favorite-route-load:hover,
+.favorite-route-load:focus-visible {
+  border-color: currentColor;
+}
+
+.favorite-route-path {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.favorite-route-stop {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.favorite-route-arrow {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.favorite-route-remove {
+  flex-shrink: 0;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.favorite-route-remove:hover,
+.favorite-route-remove:focus-visible {
+  border-color: currentColor;
+}
+
+.favorite-route-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 0.7rem;
+  padding: 0.65rem 0.9rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.favorite-route-button:hover,
+.favorite-route-button:focus-visible {
+  opacity: 0.8;
+}
+
+.favorite-route-button.is-favorite {
+  background: currentColor;
+}
+
+.favorite-route-button.is-favorite
+  .favorite-route-button-text {
+  color: var(--surface-color, #ffffff);
+}
+
+.favorite-route-button.is-favorite
+  .favorite-route-star {
+  color: var(--surface-color, #ffffff);
+}
+
+.favorite-route-star {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+@media (max-width: 700px) {
+  .favorite-route-item {
+    flex-direction: column;
+  }
+
+  .favorite-route-remove {
+    width: 100%;
+  }
+
+  .favorite-route-path {
+    width: 100%;
+  }
+
+  .favorite-route-button {
+    width: 100%;
+  }
+}
+
 
 /* =========================================================
    Section Heading
@@ -765,6 +902,12 @@ button {
   font-size: 14px;
 }
 
+.route-estimate-note {
+    margin: 0.75rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--muted-text, #6b7280);
+}
 
 /* =========================================================
    Stop List

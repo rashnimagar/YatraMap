@@ -179,6 +179,21 @@
           aria-live="polite"
         ></div>
       </section>
+
+      <section class="favorite-routes" id="favorite-routes" hidden>
+        <div class="section-heading favorite-routes-heading">
+            <div>
+                <p class="eyebrow">FAVORITE ROUTES</p>
+                <h2>Your saved routes</h2>
+            </div>
+        </div>
+
+        <div
+            class="favorite-route-list"
+            id="favorite-route-list"
+            aria-live="polite"
+        ></div>
+      </section>
     </section>
 
     {% if source and destination %}
@@ -206,6 +221,18 @@
         {{ results|length }} route{{ results|length|pluralize }} found
       </span>
 
+      {% endif %}
+
+      {% if source and destination %}
+      <button
+          type="button"
+          class="favorite-route-button"
+          id="favorite-route-button"
+          aria-pressed="false"
+      >
+          <span aria-hidden="true" class="favorite-route-star">☆</span>
+          <span class="favorite-route-button-text">Save route</span>
+      </button>
       {% endif %}
     </section>
 
@@ -286,6 +313,11 @@
                 {% endif %}
               </strong>
             </div>
+
+            <div class="route-metric">
+              <span class="metric-label">Estimated time</span>
+              <strong>{{ result.estimated_minutes }} min</strong>
+            </div>
           </div>
 
           <!-- Route stops -->
@@ -356,7 +388,16 @@
 
             <strong> {{ network_result.segments|length }} </strong>
           </div>
+
+          <div class="network-metric">
+            <span class="metric-label">Estimated time</span>
+            <strong>{{ network_result.estimated_minutes }} min</strong>
+          </div>
         </div>
+        <p class="route-estimate-note">
+          Estimated travel time based on typical planning assumptions.
+          Actual time may vary with traffic, stops, and waiting time.
+        </p>
 
         <!-- ================================================= -->
         <!-- JOURNEY SEGMENTS                                   -->
@@ -1054,6 +1095,325 @@
    * Render saved searches when the page loads.
    */
   renderRecentSearches();
+
+    /*
+  * =========================================================
+  * FAVORITE ROUTES
+  * =========================================================
+  *
+  * Favorite routes are stored locally in the user's browser.
+  * They are independent from Recent Searches.
+  */
+
+  const FAVORITE_ROUTES_KEY = "yatraMapFavoriteRoutes";
+  const MAX_FAVORITE_ROUTES = 8;
+
+  function getFavoriteRoutes() {
+    try {
+      const storedFavorites = localStorage.getItem(
+        FAVORITE_ROUTES_KEY,
+      );
+
+      if (!storedFavorites) {
+        return [];
+      }
+
+      const favorites = JSON.parse(storedFavorites);
+
+      return Array.isArray(favorites) ? favorites : [];
+    } catch (error) {
+      console.warn("Unable to read favorite routes.", error);
+      return [];
+    }
+  }
+
+  function isFavoriteRoute(sourceId, destinationId) {
+    const favorites = getFavoriteRoutes();
+
+    return favorites.some(function (favorite) {
+      return (
+        String(favorite.sourceId) === String(sourceId) &&
+        String(favorite.destinationId) === String(destinationId)
+      );
+    });
+  }
+
+  function saveFavoriteRoute(
+    sourceId,
+    sourceName,
+    destinationId,
+    destinationName,
+  ) {
+    if (
+      !sourceId ||
+      !sourceName ||
+      !destinationId ||
+      !destinationName
+    ) {
+      return false;
+    }
+
+    let favorites = getFavoriteRoutes();
+
+    const alreadyFavorite = favorites.some(function (favorite) {
+      return (
+        String(favorite.sourceId) === String(sourceId) &&
+        String(favorite.destinationId) === String(destinationId)
+      );
+    });
+
+    if (alreadyFavorite) {
+      return true;
+    }
+
+    const newFavorite = {
+      sourceId: sourceId,
+      sourceName: sourceName,
+      destinationId: destinationId,
+      destinationName: destinationName,
+    };
+
+    favorites.unshift(newFavorite);
+
+    favorites = favorites.slice(0, MAX_FAVORITE_ROUTES);
+
+    try {
+      localStorage.setItem(
+        FAVORITE_ROUTES_KEY,
+        JSON.stringify(favorites),
+      );
+
+      return true;
+    } catch (error) {
+      console.warn("Unable to save favorite route.", error);
+      return false;
+    }
+  }
+
+  function removeFavoriteRoute(sourceId, destinationId) {
+    let favorites = getFavoriteRoutes();
+
+    favorites = favorites.filter(function (favorite) {
+      return !(
+        String(favorite.sourceId) === String(sourceId) &&
+        String(favorite.destinationId) === String(destinationId)
+      );
+    });
+
+    try {
+      localStorage.setItem(
+        FAVORITE_ROUTES_KEY,
+        JSON.stringify(favorites),
+      );
+    } catch (error) {
+      console.warn("Unable to remove favorite route.", error);
+    }
+
+    renderFavoriteRoutes();
+    updateFavoriteButton();
+  }
+
+  function renderFavoriteRoutes() {
+    const favoriteSection =
+      document.getElementById("favorite-routes");
+
+    const favoriteList =
+      document.getElementById("favorite-route-list");
+
+    if (!favoriteSection || !favoriteList) {
+      return;
+    }
+
+    const favorites = getFavoriteRoutes();
+
+    favoriteList.innerHTML = "";
+
+    if (favorites.length === 0) {
+      favoriteSection.hidden = true;
+      return;
+    }
+
+    favoriteSection.hidden = false;
+
+    favorites.forEach(function (favorite) {
+      const item = document.createElement("div");
+
+      item.className = "favorite-route-item";
+
+      const loadButton = document.createElement("button");
+
+      loadButton.type = "button";
+      loadButton.className = "favorite-route-load";
+
+      loadButton.setAttribute(
+        "aria-label",
+        "Load favorite route from " +
+          favorite.sourceName +
+          " to " +
+          favorite.destinationName,
+      );
+
+      loadButton.innerHTML = `
+        <span class="favorite-route-path">
+          <span class="favorite-route-stop">
+            ${escapeRecentSearchText(favorite.sourceName)}
+          </span>
+
+          <span
+            class="favorite-route-arrow"
+            aria-hidden="true"
+          >
+            →
+          </span>
+
+          <span class="favorite-route-stop">
+            ${escapeRecentSearchText(favorite.destinationName)}
+          </span>
+        </span>
+      `;
+
+      loadButton.addEventListener("click", function () {
+        loadRecentSearch(favorite);
+      });
+
+      const removeButton = document.createElement("button");
+
+      removeButton.type = "button";
+      removeButton.className = "favorite-route-remove";
+      removeButton.textContent = "Remove";
+
+      removeButton.setAttribute(
+        "aria-label",
+        "Remove favorite route from " +
+          favorite.sourceName +
+          " to " +
+          favorite.destinationName,
+      );
+
+      removeButton.addEventListener("click", function () {
+        removeFavoriteRoute(
+          favorite.sourceId,
+          favorite.destinationId,
+        );
+      });
+
+      item.appendChild(loadButton);
+      item.appendChild(removeButton);
+
+      favoriteList.appendChild(item);
+    });
+  }
+
+  function updateFavoriteButton() {
+    const button = document.getElementById(
+      "favorite-route-button",
+    );
+
+    if (!button) {
+      return;
+    }
+
+    const source = document.getElementById("source");
+    const destination = document.getElementById("destination");
+
+    const star = button.querySelector(
+      ".favorite-route-star",
+    );
+
+    const buttonText = button.querySelector(
+      ".favorite-route-button-text",
+    );
+
+    if (!source || !destination || !star || !buttonText) {
+      return;
+    }
+
+    const saved = isFavoriteRoute(
+      source.value,
+      destination.value,
+    );
+
+    button.setAttribute(
+      "aria-pressed",
+      saved ? "true" : "false",
+    );
+
+    if (saved) {
+      star.textContent = "★";
+      buttonText.textContent = "Saved";
+      button.classList.add("is-favorite");
+    } else {
+      star.textContent = "☆";
+      buttonText.textContent = "Save route";
+      button.classList.remove("is-favorite");
+    }
+  }
+
+  function toggleFavoriteRoute() {
+    const source = document.getElementById("source");
+    const destination = document.getElementById("destination");
+
+    const sourceSearch =
+      document.getElementById("source-search");
+
+    const destinationSearch =
+      document.getElementById("destination-search");
+
+    if (
+      !source ||
+      !destination ||
+      !sourceSearch ||
+      !destinationSearch
+    ) {
+      return;
+    }
+
+    if (!source.value || !destination.value) {
+      return;
+    }
+
+    if (
+      isFavoriteRoute(
+        source.value,
+        destination.value,
+      )
+    ) {
+      removeFavoriteRoute(
+        source.value,
+        destination.value,
+      );
+
+      return;
+    }
+
+    const saved = saveFavoriteRoute(
+      source.value,
+      sourceSearch.value,
+      destination.value,
+      destinationSearch.value,
+    );
+
+    if (saved) {
+      updateFavoriteButton();
+      renderFavoriteRoutes();
+    }
+  }
+
+  const favoriteRouteButton = document.getElementById(
+    "favorite-route-button",
+  );
+
+  if (favoriteRouteButton) {
+    favoriteRouteButton.addEventListener(
+      "click",
+      toggleFavoriteRoute,
+    );
+  }
+
+  renderFavoriteRoutes();
+  updateFavoriteButton();
+
+  // ====adding the JS for finding nearby stops====
 
   const nearbyButton = document.getElementById("find-nearby-stops");
   const nearbyStatus = document.getElementById("nearby-stops-status");

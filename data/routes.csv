@@ -1,0 +1,9 @@
+route_id,operator_id,route_number,name,is_bidirectional
+sajha-01,sajha,1,Lagankhel - Gongabu Bus Park,true
+sajha-02,sajha,2,Lagankhel - Budhanilkantha,true
+sajha-03,sajha,3,Godawari - Ratnapark,true
+sajha-04,sajha,4,Lamatar - Ratnapark,true
+sajha-05,sajha,5,Thankot - Tribhuvan International Airport,true
+sajha-06,sajha,6,Thankot - Budhanilkantha,true
+sajha-07,sajha,7,Lele - Jamal,true
+sajha-08,sajha,8,Bungamati - Jamal,true
