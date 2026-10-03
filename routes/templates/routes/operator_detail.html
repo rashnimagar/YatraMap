@@ -1,0 +1,242 @@
+{% extends "routes/base.html" %}
+
+{% block title %}{{ operator.name }} — YatraMap{% endblock %}
+
+{% block content %}
+<section class="container operator-detail-page">
+
+  <a href="{% url 'operators' %}" class="explorer-back-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round"
+         stroke-linejoin="round" aria-hidden="true">
+      <path d="m15 18-6-6 6-6"/>
+    </svg>
+    <span>All Operators</span>
+  </a>
+
+  <header class="operator-detail-header">
+
+    <div class="operator-detail-icon" aria-hidden="true">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+           stroke-linejoin="round">
+        <path d="M5 17h14"/>
+        <path d="M6 17V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10"/>
+        <path d="M4 17h16"/>
+        <circle cx="8" cy="17" r="2"/>
+        <circle cx="16" cy="17" r="2"/>
+        <path d="M7 9h10"/>
+      </svg>
+    </div>
+
+    <div class="operator-detail-heading">
+      <div class="operator-detail-eyebrow">
+        <span class="operator-status-dot"></span>
+        ACTIVE TRANSIT OPERATOR
+      </div>
+
+      <h1>{{ operator.name }}</h1>
+
+      {% if operator.description %}
+        <p>{{ operator.description }}</p>
+      {% else %}
+        <p>
+          Transit operator serving routes across the Kathmandu Valley.
+        </p>
+      {% endif %}
+    </div>
+
+  </header>
+
+  <div class="operator-detail-stats">
+
+    <div class="operator-detail-stat">
+      <span class="operator-detail-stat-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round">
+          <path d="M5 17h14"/>
+          <path d="M6 17V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10"/>
+          <circle cx="8" cy="17" r="2"/>
+          <circle cx="16" cy="17" r="2"/>
+        </svg>
+      </span>
+      <div>
+        <strong>{{ routes|length }}</strong>
+        <span>active route{{ routes|length|pluralize }}</span>
+      </div>
+    </div>
+
+    {% if operator.contact %}
+      <div class="operator-detail-stat">
+        <span class="operator-detail-stat-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2
+                     19.79 19.79 0 0 1-8.63-3.07
+                     19.5 19.5 0 0 1-6-6
+                     19.79 19.79 0 0 1-3.07-8.67
+                     A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2
+                     1.72 12.84 12.84 0 0 0 .7 2.81
+                     2 2 0 0 1-.45 2.11L8.09 9.91
+                     a16 16 0 0 0 6 6l1.27-1.27
+                     a2 2 0 0 1 2.11-.45
+                     12.84 12.84 0 0 0 2.81.7
+                     A2 2 0 0 1 22 16.92z"/>
+          </svg>
+        </span>
+        <div>
+          <strong>Contact</strong>
+          <span>{{ operator.contact }}</span>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if operator.website %}
+      <div class="operator-detail-stat">
+        <span class="operator-detail-stat-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10
+                     15.3 15.3 0 0 1-4 10
+                     15.3 15.3 0 0 1-4-10
+                     15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+        </span>
+        <div>
+          <strong>Website</strong>
+          <a href="{{ operator.website }}"
+             target="_blank"
+             rel="noopener noreferrer">
+            Visit website
+          </a>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+
+  <div class="operator-routes-section">
+
+    <div class="operator-routes-heading">
+      <div>
+        <span class="operators-eyebrow">ROUTE NETWORK</span>
+        <h2>Routes operated by {{ operator.name }}</h2>
+      </div>
+
+      <span class="operator-routes-count">
+        {{ routes|length }} route{{ routes|length|pluralize }}
+      </span>
+    </div>
+
+    {% if routes %}
+
+      <div class="operator-routes-list">
+
+        {% for route in routes %}
+
+          <article class="operator-route-card">
+
+            <div class="operator-route-main">
+
+              <div class="operator-route-number">
+                {{ route.route_number }}
+              </div>
+
+              <div class="operator-route-info">
+
+                <h3>{{ route.name }}</h3>
+
+                {% if route.description %}
+                  <p>{{ route.description }}</p>
+                {% endif %}
+
+                <div class="operator-route-meta">
+
+                  <span>
+                    <svg width="15" height="15" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                      <circle cx="12" cy="12" r="9"/>
+                      <path d="M12 7v5l3 2"/>
+                    </svg>
+                    {{ route.route_stops.all|length }}
+                    stop{{ route.route_stops.all|length|pluralize }}
+                  </span>
+
+                  {% if route.base_fare != None %}
+                    <span>
+                      <svg width="15" height="15" viewBox="0 0 24 24"
+                           fill="none" stroke="currentColor" stroke-width="2"
+                           stroke-linecap="round" stroke-linejoin="round"
+                           aria-hidden="true">
+                        <path d="M12 1v22"/>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                      </svg>
+                      NPR {{ route.base_fare }}
+                    </span>
+                  {% endif %}
+
+                  {% if route.is_bidirectional %}
+                    <span>
+                      <svg width="15" height="15" viewBox="0 0 24 24"
+                           fill="none" stroke="currentColor" stroke-width="2"
+                           stroke-linecap="round" stroke-linejoin="round"
+                           aria-hidden="true">
+                        <path d="m17 2 4 4-4 4"/>
+                        <path d="M3 6h18"/>
+                        <path d="m7 22-4-4 4-4"/>
+                        <path d="M21 18H3"/>
+                      </svg>
+                      Both directions
+                    </span>
+                  {% endif %}
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <a
+              href="{% url 'route_detail' route.pk %}"
+              class="operator-route-action"
+              aria-label="View full route {{ route.route_number }} {{ route.name }}"
+            >
+              <span>View Route</span>
+              <svg width="17" height="17" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M5 12h14"/>
+                <path d="m13 6 6 6-6 6"/>
+              </svg>
+            </a>
+
+          </article>
+
+        {% endfor %}
+
+      </div>
+
+    {% else %}
+
+      <div class="operator-routes-empty">
+        <h3>No active routes</h3>
+        <p>
+          This operator currently has no active routes available in
+          YatraMap.
+        </p>
+      </div>
+
+    {% endif %}
+
+  </div>
+
+</section>
+{% endblock %}

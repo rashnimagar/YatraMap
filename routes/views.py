@@ -1,11 +1,13 @@
 import math
 
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
+from django.db import models
+from django.db.models import Count
 
-from .models import BusStop
+from .models import BusStop, BusRoute, Operator, RouteStop
 from .services.network_route_map import create_network_route_map
-from .services.route_map import create_route_map
+from .services.route_map import create_route_map, create_full_route_map
 from .services.route_search import find_routes
 from .services.transit_router import find_shortest_path
 
@@ -90,15 +92,9 @@ def route_search(request):
                 network_map = create_network_route_map(network_result)
                 network_map.get_root().render()
 
-                network_map_header = (
-                    network_map.get_root().header.render()
-                )
-                network_map_html = (
-                    network_map.get_root().html.render()
-                )
-                network_map_script = (
-                    network_map.get_root().script.render()
-                )
+                network_map_header = network_map.get_root().header.render()
+                network_map_html = network_map.get_root().html.render()
+                network_map_script = network_map.get_root().script.render()
 
         except BusStop.DoesNotExist:
             source = None
@@ -187,13 +183,9 @@ def nearby_stops(request):
         latitude_2,
         longitude_2,
     ):
-        latitude_difference = math.radians(
-            latitude_2 - latitude_1
-        )
+        latitude_difference = math.radians(latitude_2 - latitude_1)
 
-        longitude_difference = math.radians(
-            longitude_2 - longitude_1
-        )
+        longitude_difference = math.radians(longitude_2 - longitude_1)
 
         first_latitude = math.radians(latitude_1)
         second_latitude = math.radians(latitude_2)
@@ -233,9 +225,7 @@ def nearby_stops(request):
                 "latitude": float(stop.latitude),
                 "longitude": float(stop.longitude),
                 "distance_km": round(distance, 2),
-                "location_description": (
-                    stop.location_description
-                ),
+                "location_description": (stop.location_description),
             }
         )
 
@@ -245,4 +235,104 @@ def nearby_stops(request):
         {
             "results": nearby[:5],
         }
+    )
+
+
+def operators(request):
+    operator_list = (
+        Operator.objects.filter(is_active=True)
+        .annotate(
+            active_route_count=Count(
+                "routes",
+                filter=models.Q(routes__is_active=True),
+            )
+        )
+        .order_by("name")
+    )
+
+    return render(
+        request,
+        "routes/operators.html",
+        {
+            "operators": operator_list,
+        },
+    )
+
+
+def operator_detail(request, pk):
+    operator = get_object_or_404(
+        Operator,
+        pk=pk,
+        is_active=True,
+    )
+
+    routes = (
+        BusRoute.objects.filter(
+            operator=operator,
+            is_active=True,
+        )
+        .prefetch_related(
+            "route_stops__stop",
+        )
+        .order_by("route_number", "name")
+    )
+
+    return render(
+        request,
+        "routes/operator_detail.html",
+        {
+            "operator": operator,
+            "routes": routes,
+        },
+    )
+
+
+def route_detail(request, pk):
+    """
+    Display the complete details of a single active bus route,
+    including every ordered stop and the full route map.
+    """
+
+    route = get_object_or_404(
+        BusRoute.objects.select_related("operator"),
+        pk=pk,
+        is_active=True,
+        operator__is_active=True,
+    )
+
+    route_stops = list(
+        RouteStop.objects.filter(
+            route=route,
+            stop__is_active=True,
+        )
+        .select_related("stop")
+        .order_by("sequence")
+    )
+
+    route_map = create_full_route_map(route)
+
+    map_html = ""
+    map_script = ""
+
+    if route_map is not None:
+        rendered_map = route_map.get_root().render()
+
+        if "<script" in rendered_map:
+            map_html, script_content = rendered_map.split(
+                "<script",
+                1,
+            )
+            map_script = "<script" + script_content
+        else:
+            map_html = rendered_map
+
+    return render(
+        request,
+        "routes/route_detail.html",
+        {
+            "route": route,
+            "route_stops": route_stops,
+            "map_html": map_html,
+            "map_script": map_script,
+        },
     )

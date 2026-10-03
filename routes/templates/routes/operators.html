@@ -1,0 +1,151 @@
+{% extends "routes/base.html" %}
+
+{% block title %}Operators — YatraMap{% endblock %}
+
+{% block content %}
+
+<section class="container operators-page">
+
+  <div class="page-intro operators-intro">
+    <div class="operators-eyebrow">
+      <span class="operators-eyebrow-icon" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round">
+          <path d="M5 17h14"/>
+          <path d="M6 17V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10"/>
+          <path d="M4 17h16"/>
+          <circle cx="8" cy="17" r="2"/>
+          <circle cx="16" cy="17" r="2"/>
+          <path d="M7 9h10"/>
+        </svg>
+      </span>
+      <span>VALLEY BUS NETWORK</span>
+    </div>
+
+```
+<h1>Transit Operators</h1>
+
+<p class="page-description">
+  Explore the bus operators serving the Kathmandu Valley and discover
+  their available routes and stops.
+</p>
+```
+
+  </div>
+
+{% if operators %} <div class="operators-summary"> <span class="operators-summary-count">{{ operators|length }}</span> <span>
+active operator{{ operators|length|pluralize }}
+available </span> </div>
+
+```
+<div class="operators-grid">
+  {% for operator in operators %}
+    <article class="operator-card">
+
+      <div class="operator-card-top">
+        <div class="operator-logo" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 17h14"/>
+            <path d="M6 17V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10"/>
+            <path d="M4 17h16"/>
+            <circle cx="8" cy="17" r="2"/>
+            <circle cx="16" cy="17" r="2"/>
+            <path d="M7 9h10"/>
+          </svg>
+        </div>
+
+        <span class="operator-status">
+          <span class="operator-status-dot"></span>
+          Active
+        </span>
+      </div>
+
+      <div class="operator-card-content">
+        <h2>{{ operator.name }}</h2>
+
+        {% if operator.description %}
+          <p class="operator-description">
+            {{ operator.description }}
+          </p>
+        {% else %}
+          <p class="operator-description operator-description-muted">
+            Transit operator serving routes across the Kathmandu Valley.
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="operator-card-meta">
+        <div class="operator-route-count">
+          <span class="operator-meta-icon" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 17h14"/>
+              <path d="M6 17V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10"/>
+              <circle cx="8" cy="17" r="2"/>
+              <circle cx="16" cy="17" r="2"/>
+            </svg>
+          </span>
+
+          <span>
+            <strong>{{ operator.active_route_count }}</strong>
+            route{{ operator.active_route_count|pluralize }}
+          </span>
+        </div>
+
+        <a
+          href="{% url 'operator_detail' operator.pk %}"
+          class="operator-view-button"
+          aria-label="View routes operated by {{ operator.name }}"
+        >
+          <span>View Routes</span>
+          <svg width="16" height="16" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <path d="M5 12h14"/>
+            <path d="m13 6 6 6-6 6"/>
+          </svg>
+        </a>
+      </div>
+
+    </article>
+  {% endfor %}
+</div>
+```
+
+{% else %}
+
+```
+<div class="operators-empty">
+  <div class="operators-empty-icon" aria-hidden="true">
+    <svg width="32" height="32" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="1.8"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 17h14"/>
+      <path d="M6 17V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10"/>
+      <circle cx="8" cy="17" r="2"/>
+      <circle cx="16" cy="17" r="2"/>
+    </svg>
+  </div>
+
+  <h2>No operators available</h2>
+
+  <p>
+    There are currently no active transit operators in the YatraMap
+    network.
+  </p>
+
+  <a href="{% url 'route_search' %}" class="operator-empty-action">
+    Return to Route Search
+  </a>
+</div>
+```
+
+{% endif %}
+
+</section>
+{% endblock %}

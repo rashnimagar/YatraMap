@@ -1,0 +1,255 @@
+{% extends "routes/base.html" %}
+
+{% block title %}{{ route.route_number }} — {{ route.name }} — YatraMap{% endblock %}
+
+{% block content %}
+<section class="container route-detail-page">
+
+  <a href="{% url 'operator_detail' route.operator.pk %}" class="explorer-back-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round"
+         stroke-linejoin="round" aria-hidden="true">
+      <path d="m15 18-6-6 6-6"/>
+    </svg>
+    <span>{{ route.operator.name }} Routes</span>
+  </a>
+
+  <header class="route-detail-header">
+
+    <div class="route-detail-number">
+      {{ route.route_number }}
+    </div>
+
+    <div class="route-detail-heading">
+      <div class="route-detail-eyebrow">
+        <span class="route-detail-status-dot"></span>
+        {{ route.operator.name }}
+      </div>
+
+      <h1>{{ route.name }}</h1>
+
+      {% if route.description %}
+        <p>{{ route.description }}</p>
+      {% else %}
+        <p>
+          Complete route information and ordered stops for this bus service.
+        </p>
+      {% endif %}
+    </div>
+
+  </header>
+
+  <div class="route-detail-info">
+
+    <div class="route-detail-info-card">
+      <span class="route-detail-info-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 7v5l3 2"/>
+        </svg>
+      </span>
+      <div>
+        <strong>{{ route_stops|length }}</strong>
+        <span>stops</span>
+      </div>
+    </div>
+
+    <div class="route-detail-info-card">
+      <span class="route-detail-info-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round">
+          <path d="M12 1v22"/>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </span>
+      <div>
+        {% if route.base_fare != None %}
+          <strong>NPR {{ route.base_fare }}</strong>
+          <span>base fare</span>
+        {% else %}
+          <strong>Not listed</strong>
+          <span>fare information</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="route-detail-info-card">
+      <span class="route-detail-info-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round">
+          <path d="m17 2 4 4-4 4"/>
+          <path d="M3 6h18"/>
+          <path d="m7 22-4-4 4-4"/>
+          <path d="M21 18H3"/>
+        </svg>
+      </span>
+      <div>
+        {% if route.is_bidirectional %}
+          <strong>Both directions</strong>
+          <span>route operation</span>
+        {% else %}
+          <strong>One direction</strong>
+          <span>route operation</span>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="route-detail-layout">
+
+    <section class="route-stops-panel">
+
+      <div class="route-section-heading">
+        <div>
+          <span class="operators-eyebrow">ROUTE STOPS</span>
+          <h2>Complete stop sequence</h2>
+        </div>
+
+        <span class="route-stop-count">
+          {{ route_stops|length }} stop{{ route_stops|length|pluralize }}
+        </span>
+      </div>
+
+      {% if route_stops %}
+
+        <div class="route-stops-list">
+
+          {% for route_stop in route_stops %}
+
+            <div class="route-stop-item">
+
+              <div class="route-stop-marker-column">
+                <div class="route-stop-marker
+                  {% if forloop.first %}
+                    route-stop-marker-origin
+                  {% elif forloop.last %}
+                    route-stop-marker-destination
+                  {% endif %}
+                ">
+                  {{ forloop.counter }}
+                </div>
+
+                {% if not forloop.last %}
+                  <div class="route-stop-line"></div>
+                {% endif %}
+              </div>
+
+              <div class="route-stop-content">
+
+                <div class="route-stop-name">
+                  {{ route_stop.stop.name }}
+                </div>
+
+                {% if route_stop.stop.location_description %}
+                  <div class="route-stop-description">
+                    {{ route_stop.stop.location_description }}
+                  </div>
+                {% endif %}
+
+                <div class="route-stop-meta">
+
+                  {% if forloop.first %}
+                    <span class="route-stop-badge route-stop-badge-origin">
+                      Origin
+                    </span>
+                  {% elif forloop.last %}
+                    <span class="route-stop-badge route-stop-badge-destination">
+                      Destination
+                    </span>
+                  {% else %}
+                    <span>
+                      Stop {{ forloop.counter }}
+                    </span>
+                  {% endif %}
+
+                  {% if route_stop.distance_from_previous != None and not forloop.first %}
+                    <span>
+                      {{ route_stop.distance_from_previous }} km from previous stop
+                    </span>
+                  {% endif %}
+
+                </div>
+
+              </div>
+
+            </div>
+
+          {% endfor %}
+
+        </div>
+
+      {% else %}
+
+        <div class="route-stops-empty">
+          <h3>No stops available</h3>
+          <p>
+            This route currently has no active stops in the YatraMap network.
+          </p>
+        </div>
+
+      {% endif %}
+
+    </section>
+
+    <section class="route-map-panel">
+
+      <div class="route-section-heading route-map-heading">
+        <div>
+          <span class="operators-eyebrow">ROUTE MAP</span>
+          <h2>Full route coverage</h2>
+        </div>
+      </div>
+
+      {% if map_html %}
+
+        <div class="route-detail-map" id="route-detail-map">
+          {{ map_html|safe }}
+        </div>
+
+        {% if map_script %}
+          {{ map_script|safe }}
+        {% endif %}
+
+      {% else %}
+
+        <div class="route-map-empty">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z"/>
+            <path d="M9 3v15"/>
+            <path d="M15 6v15"/>
+          </svg>
+
+          <h3>Map unavailable</h3>
+          <p>
+            A map could not be generated for this route.
+          </p>
+        </div>
+
+      {% endif %}
+
+    </section>
+
+  </div>
+
+  <div class="route-detail-footer-action">
+    <a href="{% url 'route_search' %}" class="route-search-action">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round"
+           stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/>
+        <path d="m20 20-4-4"/>
+      </svg>
+      <span>Find a Route</span>
+    </a>
+  </div>
+
+</section>
+{% endblock %}

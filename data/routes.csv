@@ -1,9 +1,14 @@
 route_id,operator_id,route_number,name,is_bidirectional
-sajha-01,sajha,1,Lagankhel - Gongabu Bus Park,true
+sajha-01,sajha,1,Lagankhel - Naya Buspark,true
 sajha-02,sajha,2,Lagankhel - Budhanilkantha,true
-sajha-03,sajha,3,Godawari - Ratnapark,true
-sajha-04,sajha,4,Lamatar - Ratnapark,true
-sajha-05,sajha,5,Thankot - Tribhuvan International Airport,true
-sajha-06,sajha,6,Thankot - Budhanilkantha,true
-sajha-07,sajha,7,Lele - Jamal,true
-sajha-08,sajha,8,Bungamati - Jamal,true
+sajha-03,sajha,3,Thankot - Budhanilkantha,true
+sajha-04,sajha,4,Thankot - Tribhuvan International Airport,true
+sajha-05,sajha,5,Bungamati - Jamal,true
+sajha-06,sajha,6,Godawari - Jamal,true
+sajha-07,sajha,7,Jamal - Lele,true
+sajha-08,sajha,8,Ratnapark - Lamatar,true
+sajha-09,sajha,9,Godawari - Budhanilkantha,true
+sajha-10,sajha,10,Kritipur - Jamal,true
+sajha-11,sajha,11,Suryabinayak - Keshar Mahal,true
+sajha-12,sajha,12,Takhel - Keshar Mahal,true
+sajha-13,sajha,13,Sajha Ringroad,true

@@ -2,25 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-
     <meta
       name="description"
-      content="YatraMap — Find bus routes, stops and fares across Kathmandu Valley."
+      content="YatraMap — Kathmandu Valley Bus Route & Navigation System. Find routes, stops, transfers, and maps across Kathmandu, Lalitpur, and Bhaktapur."
     />
+    <meta name="theme-color" content="#0f766e" />
 
     <title>
       {% block title %}YatraMap — Kathmandu Valley Bus Routes{% endblock %}
     </title>
 
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
     {% block extra_head %}{% endblock %}
 
     {% load static %}
-
     <link
       rel="stylesheet"
       href="{% static 'css/yatra-map.css' %}"
@@ -29,12 +35,27 @@
 
   <body>
     <div class="app-shell">
-
       <header class="site-header">
         <div class="container header-inner">
-
-          <a href="{% url 'route_search' %}" class="brand">
-            <span class="brand-mark">Y</span>
+          <a href="{% url 'route_search' %}" class="brand" title="YatraMap Home">
+            <span class="brand-mark" aria-hidden="true">
+              <svg
+                class="brand-icon"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10z" />
+                <path d="M4 10h16" />
+                <path d="M7 15h.01" />
+                <path d="M17 15h.01" />
+              </svg>
+            </span>
 
             <span class="brand-copy">
               <span class="brand-name">YatraMap</span>
@@ -44,30 +65,57 @@
             </span>
           </a>
 
-          <nav class="main-nav" aria-label="Main navigation">
-            <a
-              href="{% url 'route_search' %}"
-              class="nav-link nav-link-active"
+          <nav class="site-nav" aria-label="Primary navigation">
+           <a
+              href="{% url 'operators' %}"
+              class="site-nav-link"
             >
-              Routes
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 17h14"/>
+                <path d="M6 17V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10"/>
+                <path d="M4 17h16"/>
+                <circle cx="8" cy="17" r="2"/>
+                <circle cx="16" cy="17" r="2"/>
+                <path d="M7 9h10"/>
+              </svg>
+
+              <span>Operators</span>
             </a>
           </nav>
 
+          <div class="header-badge">
+            <span class="valley-badge-dot"></span>
+            <span class="valley-badge-text">Valley Bus Network</span>
+          </div>
         </div>
       </header>
 
-      <main class="main-content">
+      <main class="main-content" id="main-content">
         {% block content %}{% endblock %}
       </main>
 
       <footer class="site-footer">
         <div class="container footer-inner">
-          <p>
-            YatraMap · Kathmandu Valley Bus Route Finder
+          <div class="footer-brand">
+            <span class="footer-title">YatraMap</span>
+            <span class="footer-separator">·</span>
+            <span>Kathmandu Valley Bus Route & Navigation System</span>
+          </div>
+          <p class="footer-note">
+            Public transit navigation for Kathmandu, Lalitpur & Bhaktapur.
           </p>
         </div>
       </footer>
-
     </div>
 
     {% block extra_scripts %}{% endblock %}

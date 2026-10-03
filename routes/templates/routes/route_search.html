@@ -1,53 +1,56 @@
-{% extends "routes/base.html" %} 
+{% extends "routes/base.html" %}
 
-{% block extra_head %} 
-  {% if map_header %} 
-    {{ map_header|safe }} 
-  {% endif %} 
-  {% if network_map_header %} 
-    {{ network_map_header|safe }} 
-  {% endif %} 
-{% endblock %} 
+{% block extra_head %}
+  {% if map_header %}
+    {{ map_header|safe }}
+  {% endif %}
+  {% if network_map_header %}
+    {{ network_map_header|safe }}
+  {% endif %}
+{% endblock %}
 
-{% block title %} YatraMap — Bus Route Search 
-{% endblock %} 
+{% block title %}YatraMap — Kathmandu Valley Bus Route Search{% endblock %}
 
 {% block content %}
-
 <section class="route-page">
   <div class="container">
     <!-- ========================================================= -->
     <!-- PAGE INTRODUCTION                                         -->
     <!-- ========================================================= -->
-
     <div class="page-intro">
-      <p class="eyebrow">KATHMANDU VALLEY TRANSIT</p>
-
+      <span class="eyebrow">KATHMANDU VALLEY TRANSIT</span>
       <h1>Find your bus route</h1>
-
       <p class="page-description">
-        Search between bus stops and discover available routes, fares, distances
-        and stops along the way.
+        Plan your bus journey across Kathmandu, Lalitpur, and Bhaktapur. Search between stops to view direct routes, connected transfer journeys, fares, and interactive route maps.
       </p>
     </div>
 
     <!-- ========================================================= -->
-    <!-- SEARCH PANEL                                               -->
+    <!-- SEARCH PANEL (TRANSIT STATION SELECTOR)                   -->
     <!-- ========================================================= -->
-
     <section class="search-panel" aria-label="Bus route search">
-      <form method="get" class="route-search-form">
+      <form method="get" class="route-search-form" id="route-search-form" novalidate>
         <div class="search-fields">
-          <!-- From -->
+          <!-- From Field -->
           <div class="field-group autocomplete-group">
-            <label for="source-search"> From </label>
+            <label for="source-search" class="field-label">
+              <span class="station-node-icon origin" aria-hidden="true"></span>
+              <span>From (Starting Stop)</span>
+            </label>
 
             <div class="autocomplete-wrapper">
+              <span class="autocomplete-input-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </span>
+
               <input
                 type="text"
                 id="source-search"
                 class="autocomplete-input"
-                placeholder="Search starting stop..."
+                placeholder="Search starting stop (e.g. Lagankhel, Godawari)..."
                 role="combobox"
                 aria-autocomplete="list"
                 aria-controls="source-suggestions"
@@ -56,6 +59,14 @@
                 value="{% if source %}{{ source.name }}{% endif %}"
                 required
               />
+
+              <button
+                type="button"
+                class="input-clear-btn"
+                id="clear-source-btn"
+                aria-label="Clear starting stop"
+                tabindex="-1"
+              >×</button>
 
               <input
                 type="hidden"
@@ -73,27 +84,38 @@
             </div>
           </div>
 
-          <!-- Swap -->
+          <!-- Swap Button -->
           <button
             type="button"
             class="swap-button"
+            id="swap-locations-button"
             aria-label="Swap starting point and destination"
-            title="Swap locations"
+            title="Swap origin and destination"
             onclick="swapLocations()"
           >
             ⇅
           </button>
 
-          <!-- To -->
+          <!-- To Field -->
           <div class="field-group autocomplete-group">
-            <label for="destination-search"> To </label>
+            <label for="destination-search" class="field-label">
+              <span class="station-node-icon destination" aria-hidden="true"></span>
+              <span>To (Destination Stop)</span>
+            </label>
 
             <div class="autocomplete-wrapper">
+              <span class="autocomplete-input-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+              </span>
+
               <input
                 type="text"
                 id="destination-search"
                 class="autocomplete-input"
-                placeholder="Search destination stop..."
+                placeholder="Search destination stop (e.g. Gongabu, Ratnapark)..."
                 role="combobox"
                 aria-autocomplete="list"
                 aria-controls="destination-suggestions"
@@ -102,6 +124,14 @@
                 value="{% if destination %}{{ destination.name }}{% endif %}"
                 required
               />
+
+              <button
+                type="button"
+                class="input-clear-btn"
+                id="clear-destination-btn"
+                aria-label="Clear destination stop"
+                tabindex="-1"
+              >×</button>
 
               <input
                 type="hidden"
@@ -121,473 +151,463 @@
         </div>
 
         <div class="search-actions">
-          <button type="submit" class="find-route-button">
-            <span> Find Route </span>
-
-            <span aria-hidden="true"> → </span>
+          <button type="submit" class="find-route-button" id="find-route-submit">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10z" />
+              <path d="M4 10h16" />
+            </svg>
+            <span>Find Route</span>
+            <span class="find-route-arrow" aria-hidden="true">→</span>
           </button>
         </div>
       </form>
 
-      <section class="nearby-stops-section" id="nearby-stops">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">NEARBY STOPS</p>
-            <h2>Find bus stops near you</h2>
-            <p class="section-description">
-              Use your location to discover the closest active bus stops.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            class="nearby-stops-button"
-            id="find-nearby-stops"
-          >
-            Find nearby stops
-          </button>
-        </div>
-
-        <div
-          class="nearby-stops-status"
-          id="nearby-stops-status"
-          aria-live="polite"
-        ></div>
-
-        <div class="nearby-stops-list" id="nearby-stops-list"></div>
-      </section>
-
-      <section class="recent-searches" id="recent-searches" hidden>
-        <div class="section-heading recent-searches-heading">
-          <div>
-            <p class="eyebrow">RECENT SEARCHES</p>
-            <h2>Your recent routes</h2>
-          </div>
-
-          <button
-            type="button"
-            class="clear-recent-searches"
-            id="clear-recent-searches"
-          >
-            Clear
-          </button>
-        </div>
-
-        <div
-          class="recent-search-list"
-          id="recent-search-list"
-          aria-live="polite"
-        ></div>
-      </section>
-
-      <section class="favorite-routes" id="favorite-routes" hidden>
-        <div class="section-heading favorite-routes-heading">
+      <!-- ======================================================= -->
+      <!-- TRANSIT UTILITIES (Nearby Stops, Recents, Favorites)     -->
+      <!-- ======================================================= -->
+      <div class="transit-utilities">
+        <!-- Nearby Stops Section -->
+        <section class="nearby-stops-section" id="nearby-stops">
+          <div class="section-heading">
             <div>
-                <p class="eyebrow">FAVORITE ROUTES</p>
-                <h2>Your saved routes</h2>
+              <span class="eyebrow">NEARBY STOPS</span>
+              <h2>Find bus stops near you</h2>
+              <p class="section-description">
+                Use your current GPS location to discover the closest active bus stops in Kathmandu Valley.
+              </p>
             </div>
-        </div>
 
-        <div
+            <button
+              type="button"
+              class="nearby-stops-button"
+              id="find-nearby-stops"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="3 11 22 2 13 21 11 13 3 11" />
+              </svg>
+              <span>Find nearby stops</span>
+            </button>
+          </div>
+
+          <div
+            class="nearby-stops-status"
+            id="nearby-stops-status"
+            aria-live="polite"
+          ></div>
+
+          <div class="nearby-stops-list" id="nearby-stops-list"></div>
+        </section>
+
+        <!-- Recent Searches Section -->
+        <section class="recent-searches" id="recent-searches" hidden>
+          <div class="section-heading recent-searches-heading">
+            <div>
+              <span class="eyebrow">RECENT SEARCHES</span>
+              <h2>Your recent routes</h2>
+            </div>
+
+            <button
+              type="button"
+              class="clear-recent-searches"
+              id="clear-recent-searches"
+            >
+              Clear all
+            </button>
+          </div>
+
+          <div
+            class="recent-search-list"
+            id="recent-search-list"
+            aria-live="polite"
+          ></div>
+        </section>
+
+        <!-- Favorite Routes Section -->
+        <section class="favorite-routes" id="favorite-routes" hidden>
+          <div class="section-heading favorite-routes-heading">
+            <div>
+              <span class="eyebrow">FAVORITE ROUTES</span>
+              <h2>Your saved routes</h2>
+            </div>
+          </div>
+
+          <div
             class="favorite-route-list"
             id="favorite-route-list"
             aria-live="polite"
-        ></div>
-      </section>
+          ></div>
+        </section>
+      </div>
     </section>
 
+    <!-- ========================================================= -->
+    <!-- SEARCH SUMMARY & RESULTS                                  -->
+    <!-- ========================================================= -->
     {% if source and destination %}
-
-    <!-- ======================================================= -->
-    <!-- SEARCH SUMMARY                                           -->
-    <!-- ======================================================= -->
-
     <section class="search-summary">
-      <div>
-        <span class="summary-label"> ROUTE SEARCH </span>
-
-        <h2>
-          {{ source.name }}
-
-          <span aria-hidden="true"> → </span>
-
-          {{ destination.name }}
+      <div class="summary-heading-group">
+        <span class="summary-label">ROUTE SEARCH</span>
+        <h2 class="summary-title">
+          <span class="summary-stop origin">{{ source.name }}</span>
+          <span class="route-arrow" aria-hidden="true">→</span>
+          <span class="summary-stop destination">{{ destination.name }}</span>
         </h2>
       </div>
 
-      {% if results %}
+      <div class="summary-actions-group">
+        {% if results %}
+        <span class="result-count">
+          {{ results|length }} direct route{{ results|length|pluralize }} found
+        </span>
+        {% endif %}
 
-      <span class="result-count">
-        {{ results|length }} route{{ results|length|pluralize }} found
-      </span>
-
-      {% endif %}
-
-      {% if source and destination %}
-      <button
+        <button
           type="button"
           class="favorite-route-button"
           id="favorite-route-button"
           aria-pressed="false"
-      >
+          title="Save this journey to favorites"
+        >
           <span aria-hidden="true" class="favorite-route-star">☆</span>
           <span class="favorite-route-button-text">Save route</span>
-      </button>
-      {% endif %}
+        </button>
+      </div>
     </section>
 
-    <!-- ======================================================= -->
-    <!-- DIRECT ROUTE RESULTS                                     -->
-    <!-- ======================================================= -->
-
+    <!-- ========================================================= -->
+    <!-- DIRECT ROUTE RESULTS                                       -->
+    <!-- ========================================================= -->
     {% if results %}
-
     <section class="route-results">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">AVAILABLE ROUTES</p>
-
-          <h2>Choose your route</h2>
+          <span class="eyebrow">DIRECT ROUTES</span>
+          <h2>Available Direct Bus Routes</h2>
         </div>
       </div>
 
       <div class="route-list">
         {% for result in results %}
-
         <article
-          class="route-card {% if selected_result and selected_result.route.id == result.route.id %} route-card-selected {% endif %}"
+          class="route-card {% if selected_result and selected_result.route.id == result.route.id %}route-card-selected{% endif %}"
         >
-          <!-- Route header -->
-
+          <!-- Prominent Route Card Header -->
           <div class="route-card-header">
             <div class="route-identity">
-              <span class="route-number">
+              <span class="route-number-hero">
                 {{ result.route.route_number }}
               </span>
 
-              <div>
-                <h3>{{ result.route.name }}</h3>
-
-                <p>{{ result.route.operator.name }}</p>
+              <div class="route-details-copy">
+                <h3 class="route-name-hero">{{ result.route.name }}</h3>
+                <span class="operator-badge-hero">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10z" />
+                    <path d="M4 10h16" />
+                  </svg>
+                  {{ result.route.operator.name }}
+                </span>
               </div>
             </div>
 
             {% if selected_result and selected_result.route.id == result.route.id %}
-
-            <span class="selected-badge"> Selected </span>
-
+            <span class="selected-badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Selected on map
+            </span>
             {% else %}
-
             <a
               class="view-route-link"
               href="?source={{ source.id }}&destination={{ destination.id }}&route={{ result.route.id }}"
+              title="Select and view this route on the map"
             >
-              View route →
+              <span>View route</span>
+              <span aria-hidden="true">→</span>
             </a>
-
             {% endif %}
           </div>
 
-          <!-- Route metrics -->
-
+          <!-- Balanced 4 Route Metrics -->
           <div class="route-metrics">
             <div class="route-metric">
-              <span class="metric-label"> Distance </span>
-
-              <strong> {{ result.total_distance }} km </strong>
-            </div>
-
-            <div class="route-metric">
-              <span class="metric-label"> Stops </span>
-
-              <strong> {{ result.stops|length }} </strong>
-            </div>
-
-            <div class="route-metric">
-              <span class="metric-label"> Fare </span>
-
-              <strong>
-                {% if result.route.base_fare != None %} NPR 
-                  {{ result.route.base_fare }} 
-                {% else %} — 
-                {% endif %}
-              </strong>
+              <span class="metric-label">Distance</span>
+              <strong>{{ result.total_distance }} km</strong>
             </div>
 
             <div class="route-metric">
               <span class="metric-label">Estimated time</span>
-              <strong>{{ result.estimated_minutes }} min</strong>
+              <strong>~{{ result.estimated_minutes }} min</strong>
+            </div>
+
+            <div class="route-metric">
+              <span class="metric-label">Stops</span>
+              <strong>{{ result.stops|length }}</strong>
+            </div>
+
+            <div class="route-metric">
+              <span class="metric-label">Fare</span>
+              <strong>
+                {% if result.route.base_fare != None %}
+                  NPR {{ result.route.base_fare }}
+                {% else %}
+                  —
+                {% endif %}
+              </strong>
             </div>
           </div>
 
-          <!-- Route stops -->
-
-          <div class="stop-list">
-            <div class="stop-list-header">
-              <span> Stops along this route </span>
+          <!-- Spacious Vertical Transit Timeline -->
+          <div class="journey-timeline direct-timeline">
+            <div class="timeline-header">
+              <span>Journey Timeline · {{ result.stops|length }} stops</span>
             </div>
 
-            <ol>
+            <ol class="timeline-list">
               {% for route_stop in result.stops %}
-
-              <li>
-                <span class="stop-marker"></span>
-
-                <span class="stop-name"> {{ route_stop.stop.name }} </span>
-              </li>
-
+                {% if forloop.first %}
+                <li class="timeline-item origin-node">
+                  <div class="node-marker origin-marker" aria-hidden="true"></div>
+                  <div class="node-content">
+                    <span class="node-tag origin-tag">START · BOARD HERE</span>
+                    <span class="node-stop-name major">{{ route_stop.stop.name }}</span>
+                  </div>
+                </li>
+                {% elif forloop.last %}
+                <li class="timeline-item destination-node">
+                  <div class="node-marker destination-marker" aria-hidden="true"></div>
+                  <div class="node-content">
+                    <span class="node-tag destination-tag">DESTINATION · ARRIVE HERE</span>
+                    <span class="node-stop-name major">{{ route_stop.stop.name }}</span>
+                  </div>
+                </li>
+                {% else %}
+                <li class="timeline-item intermediate-node">
+                  <div class="node-marker intermediate-marker" aria-hidden="true"></div>
+                  <div class="node-content">
+                    <span class="node-stop-name">{{ route_stop.stop.name }}</span>
+                  </div>
+                </li>
+                {% endif %}
               {% endfor %}
             </ol>
           </div>
         </article>
-
         {% endfor %}
       </div>
     </section>
-
     {% endif %}
 
-    <!-- ======================================================= -->
-    <!-- NETWORK JOURNEY                                          -->
-    <!-- ======================================================= -->
-
+    <!-- ========================================================= -->
+    <!-- NETWORK / CONNECTED JOURNEY                               -->
+    <!-- Preserves exact test strings:                             -->
+    <!--   "NETWORK JOURNEY", "Best connected journey",            -->
+    <!--   "Change bus route"                                      -->
+    <!-- ========================================================= -->
     {% if network_result and network_result.segments %}
-
     <section class="network-results">
       <div class="section-heading">
         <div>
           <p class="eyebrow">NETWORK JOURNEY</p>
-
           <h2>Best connected journey</h2>
         </div>
 
         <span class="network-summary">
-          {{ network_result.transfers }} transfer 
-          {{ network_result.transfers|pluralize }}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="16 3 21 3 21 8" />
+            <line x1="4" y1="20" x2="21" y2="3" />
+            <polyline points="21 16 21 21 16 21" />
+            <line x1="15" y1="15" x2="21" y2="21" />
+            <line x1="4" y1="4" x2="9" y2="9" />
+          </svg>
+          {{ network_result.transfers }} transfer{{ network_result.transfers|pluralize }} · {{ network_result.segments|length }} bus route{{ network_result.segments|length|pluralize }}
         </span>
       </div>
 
       <article class="network-card">
-        <!-- Journey metrics -->
-
+        <!-- Journey Metrics Grid (4 items) -->
         <div class="network-metrics">
           <div class="network-metric">
-            <span class="metric-label"> Distance </span>
-
-            <strong> {{ network_result.total_distance }} km </strong>
-          </div>
-
-          <div class="network-metric">
-            <span class="metric-label"> Transfers </span>
-
-            <strong> {{ network_result.transfers }} </strong>
-          </div>
-
-          <div class="network-metric">
-            <span class="metric-label"> Bus routes </span>
-
-            <strong> {{ network_result.segments|length }} </strong>
+            <span class="metric-label">Distance</span>
+            <strong>{{ network_result.total_distance }} km</strong>
           </div>
 
           <div class="network-metric">
             <span class="metric-label">Estimated time</span>
-            <strong>{{ network_result.estimated_minutes }} min</strong>
+            <strong>~{{ network_result.estimated_minutes }} min</strong>
+          </div>
+
+          <div class="network-metric">
+            <span class="metric-label">Transfers</span>
+            <strong>{{ network_result.transfers }}</strong>
+          </div>
+
+          <div class="network-metric">
+            <span class="metric-label">Bus routes</span>
+            <strong>{{ network_result.segments|length }}</strong>
           </div>
         </div>
+
         <p class="route-estimate-note">
-          Estimated travel time based on typical planning assumptions.
-          Actual time may vary with traffic, stops, and waiting time.
+          Estimated travel time based on typical planning assumptions (~18 km/h + 5 min per transfer). Actual time may vary with traffic, stops, and waiting time.
         </p>
 
-        <!-- ================================================= -->
-        <!-- JOURNEY SEGMENTS                                   -->
-        <!-- ================================================= -->
-
+        <!-- Journey Segments -->
         <div class="journey-segments">
           {% for segment in network_result.segments %}
-
           <article class="journey-segment">
-            <!-- Segment header -->
-
             <div class="journey-segment-header">
               <div class="route-identity">
                 <span class="route-number">
                   {{ segment.route.route_number }}
                 </span>
 
-                <div>
+                <div class="route-details-copy">
                   <h3>{{ segment.route.name }}</h3>
-
-                  <p>{{ segment.operator.name }}</p>
+                  <span class="operator-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10z" />
+                      <path d="M4 10h16" />
+                    </svg>
+                    {{ segment.operator.name }}
+                  </span>
                 </div>
               </div>
 
-              <span class="segment-distance"> {{ segment.distance }} km </span>
+              <span class="segment-distance">
+                {{ segment.distance }} km
+              </span>
             </div>
 
-            <!-- Journey instruction -->
-
+            <!-- Boarding / Transfer instruction -->
             <div class="journey-instruction">
               {% if forloop.first %}
-
-              <strong> Board this bus </strong>
-
-              <span> Start your journey on this route </span>
-
+              <strong>Board this bus</strong>
+              <span>Start your journey on this route</span>
               {% else %}
-
-              <strong> Continue after transfer </strong>
-
-              <span> Change bus route </span>
-
+              <strong>Continue after transfer</strong>
+              <span>Change bus route</span>
               {% endif %}
             </div>
 
-            <!-- Segment stops -->
-
+            <!-- Segment Stop List -->
             <div class="journey-stop-list">
               {% for stop in segment.stops %}
-
               <div class="journey-stop">
                 <span class="journey-stop-marker" aria-hidden="true"></span>
-
-                <span class="journey-stop-name"> {{ stop.name }} </span>
+                <span class="journey-stop-name">{{ stop.name }}</span>
               </div>
-
               {% endfor %}
             </div>
           </article>
 
-          <!-- ================================================= -->
-          <!-- TRANSFER BETWEEN SEGMENTS                         -->
-          <!-- ================================================= -->
-
+          <!-- Transfer Callout between segments -->
           {% if not forloop.last %}
-
           <div class="transfer-point">
-            <span class="transfer-marker" aria-hidden="true"> T </span>
-
-            <div>
-              <strong> Transfer at {{ segment.stops|last }} </strong>
-
-              <span> Get off here and change to the next bus route </span>
+            <span class="transfer-marker" aria-hidden="true">T</span>
+            <div class="transfer-details">
+              <strong>Transfer at {{ segment.stops|last }}</strong>
+              <span>Get off here and change to the next bus route</span>
             </div>
           </div>
-
-          {% endif %} 
+          {% endif %}
           {% endfor %}
         </div>
       </article>
     </section>
-
     {% endif %}
 
-    <!-- ======================================================= -->
-    <!-- NETWORK JOURNEY MAP                                      -->
-    <!-- ======================================================= -->
-
+    <!-- ========================================================= -->
+    <!-- NETWORK JOURNEY MAP                                       -->
+    <!-- ========================================================= -->
     {% if network_result and network_map_html %}
-
     <section class="map-section network-map-section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">JOURNEY MAP</p>
-
+          <span class="eyebrow">JOURNEY MAP</span>
           <h2>Connected journey map</h2>
         </div>
 
         <span class="map-route-name">
-          {{ network_result.segments|length }} bus routes
+          {{ network_result.segments|length }} bus routes connected
         </span>
       </div>
 
-      <div
-        class="map-card"
-        style="width: 100%; height: 520px; min-height: 520px; overflow: hidden"
-      >
-        <div
-          id="network-route-map"
-          class="route-map"
-          style="
-            width: 100%;
-            height: 100%;
-            min-height: 520px;
-            position: relative;
-          "
-        >
+      <div class="map-card">
+        <div id="network-route-map" class="route-map">
           {{ network_map_html|safe }}
         </div>
       </div>
     </section>
-
     {% endif %}
 
-    <!-- ======================================================= -->
-    <!-- DIRECT ROUTE MAP                                         -->
-    <!-- ======================================================= -->
-
+    <!-- ========================================================= -->
+    <!-- DIRECT ROUTE MAP                                          -->
+    <!-- ========================================================= -->
     {% if selected_result and map_html %}
-
     <section class="map-section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">MAP</p>
-
-          <h2>{{ selected_result.route.route_number }} route map</h2>
+          <span class="eyebrow">MAP</span>
+          <h2>Route {{ selected_result.route.route_number }} map</h2>
         </div>
 
-        <span class="map-route-name"> {{ selected_result.route.name }} </span>
+        <span class="map-route-name">{{ selected_result.route.name }}</span>
       </div>
 
       <div class="map-card">
-        <div id="route-map" class="route-map">{{ map_html|safe }}</div>
+        <div id="route-map" class="route-map">
+          {{ map_html|safe }}
+        </div>
       </div>
     </section>
-
     {% endif %}
 
-    <!-- ======================================================= -->
-    <!-- NO JOURNEY FOUND                                         -->
-    <!-- ======================================================= -->
-
+    <!-- ========================================================= -->
+    <!-- EMPTY STATE (NO ROUTE FOUND)                              -->
+    <!-- ========================================================= -->
     {% if not results and not network_result %}
-
     <section class="empty-state">
-      <div class="empty-icon" aria-hidden="true">—</div>
+      <div class="empty-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="8" y1="12" x2="16" y2="12" />
+        </svg>
+      </div>
 
       <h2>No route found</h2>
 
       <p>
-        We couldn't find a bus journey between
-
-        <strong> {{ source.name }} </strong>
-
+        We couldn't find a direct or connected bus journey between
+        <strong>{{ source.name }}</strong>
         and
-
-        <strong> {{ destination.name }} </strong>.
+        <strong>{{ destination.name }}</strong>.
       </p>
 
-      <p>Try another pair of stops.</p>
+      <div class="empty-suggestions">
+        <p><strong>Suggestions:</strong></p>
+        <p>Try searching to/from major Kathmandu Valley transit hubs like <em>Ratnapark</em>, <em>Lagankhel</em>, or <em>Gongabu Bus Park</em>, or check spelling.</p>
+      </div>
     </section>
-
-    {% endif %} {% endif %}
+    {% endif %}
+    {% endif %}
   </div>
 </section>
-
-{% endblock %} 
+{% endblock %}
 
 {% block extra_scripts %}
-
 <!-- ========================================================= -->
 <!-- STOP DATA FOR AUTOCOMPLETE                                -->
 <!-- ========================================================= -->
-
 <script id="yatra-map-stops" type="application/json">
   [
     {% for stop in stops %}
-      { "id": "{{ stop.id }}", "name": "{{ stop.name|escapejs }}"}
-      {% if not forloop.last %},
-      {% endif %}
+      {
+        "id": "{{ stop.id }}",
+        "name": "{{ stop.name|escapejs }}",
+        "description": "{{ stop.location_description|default:''|escapejs }}"
+      }{% if not forloop.last %},{% endif %}
     {% endfor %}
   ]
 </script>
@@ -595,9 +615,7 @@
 <!-- ========================================================= -->
 <!-- DIRECT ROUTE MAP SCRIPT                                   -->
 <!-- ========================================================= -->
-
 {% if map_script %}
-
 <script>
   {{ map_script | safe }}
 
@@ -609,23 +627,14 @@
     window.dispatchEvent(new Event("resize"));
   }, 500);
 </script>
-
 {% endif %}
 
 <!-- ========================================================= -->
 <!-- NETWORK ROUTE MAP SCRIPT                                  -->
 <!-- ========================================================= -->
-
 {% if network_map_script %}
-
 <script>
   {{ network_map_script | safe }}
-
-  /*
-   * Folium / Leaflet may initialize while the surrounding
-   * layout is still settling. Trigger a resize after
-   * initialization so Leaflet recalculates the map dimensions.
-   */
 
   setTimeout(function () {
     window.dispatchEvent(new Event("resize"));
@@ -635,83 +644,118 @@
     window.dispatchEvent(new Event("resize"));
   }, 500);
 </script>
-
 {% endif %}
 
 <!-- ========================================================= -->
-<!-- STOP AUTOCOMPLETE                                         -->
+<!-- AUTOCOMPLETE & CORE INTERACTION LOGIC                     -->
 <!-- ========================================================= -->
-
 <script>
   const yatraMapStops = JSON.parse(
     document.getElementById("yatra-map-stops").textContent,
   );
 
-  function setupStopAutocomplete(searchId, hiddenId, suggestionsId) {
+  function escapeText(value) {
+    const div = document.createElement("div");
+    div.textContent = value || "";
+    return div.innerHTML;
+  }
+
+  // Registry of close functions so external actions can dismiss suggestions cleanly
+  const autocompleteControllers = {};
+
+  function setupStopAutocomplete(searchId, hiddenId, suggestionsId, clearBtnId) {
     const searchInput = document.getElementById(searchId);
-
     const hiddenInput = document.getElementById(hiddenId);
-
     const suggestions = document.getElementById(suggestionsId);
+    const clearBtn = clearBtnId ? document.getElementById(clearBtnId) : null;
 
     if (!searchInput || !hiddenInput || !suggestions) {
       return;
+    }
+
+    let activeIndex = -1;
+
+    function updateClearButton() {
+      if (clearBtn) {
+        clearBtn.style.display = searchInput.value.trim() ? "flex" : "none";
+      }
     }
 
     function closeSuggestions() {
       suggestions.innerHTML = "";
       suggestions.classList.remove("is-visible");
       searchInput.setAttribute("aria-expanded", "false");
+      activeIndex = -1;
     }
+
+    autocompleteControllers[searchId] = closeSuggestions;
 
     function selectStop(stop) {
       searchInput.value = stop.name;
       hiddenInput.value = stop.id;
       searchInput.setAttribute("aria-expanded", "false");
       closeSuggestions();
+      updateClearButton();
+    }
+
+    function highlightOption(options, index) {
+      options.forEach(function (opt, i) {
+        if (i === index) {
+          opt.classList.add("is-active");
+          opt.scrollIntoView({ block: "nearest" });
+        } else {
+          opt.classList.remove("is-active");
+        }
+      });
     }
 
     function renderSuggestions(query) {
       const normalizedQuery = query.trim().toLowerCase();
-
       suggestions.innerHTML = "";
+      activeIndex = -1;
 
       if (!normalizedQuery) {
         closeSuggestions();
-
         return;
       }
 
       const matches = yatraMapStops
         .filter(function (stop) {
-          return stop.name.toLowerCase().includes(normalizedQuery);
+          const matchName = stop.name.toLowerCase().includes(normalizedQuery);
+          const matchDesc = stop.description ? stop.description.toLowerCase().includes(normalizedQuery) : false;
+          return matchName || matchDesc;
         })
         .slice(0, 8);
 
       if (matches.length === 0) {
         const empty = document.createElement("div");
-
         empty.className = "autocomplete-empty";
-
-        empty.textContent = "No bus stops found";
-
+        empty.textContent = "No bus stops found in Kathmandu Valley";
         suggestions.appendChild(empty);
-
         suggestions.classList.add("is-visible");
-
+        searchInput.setAttribute("aria-expanded", "true");
         return;
       }
 
-      matches.forEach(function (stop) {
+      matches.forEach(function (stop, idx) {
         const option = document.createElement("button");
-
         option.type = "button";
-
         option.className = "autocomplete-option";
-
-        option.textContent = stop.name;
-
         option.setAttribute("role", "option");
+        option.setAttribute("id", `${suggestionsId}-opt-${idx}`);
+
+        option.innerHTML = `
+          <span class="option-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </span>
+          <span class="option-details">
+            <span class="option-stop-name">${escapeText(stop.name)}</span>
+            ${stop.description ? `<span class="option-stop-desc">${escapeText(stop.description)}</span>` : ""}
+          </span>
+        `;
 
         option.addEventListener("click", function () {
           selectStop(stop);
@@ -725,187 +769,191 @@
     }
 
     searchInput.addEventListener("input", function () {
-      /*
-       * The visible text has changed,
-       * so the previously selected stop
-       * ID is no longer guaranteed to be valid.
-       */
-
       hiddenInput.value = "";
-
+      updateClearButton();
       renderSuggestions(searchInput.value);
     });
 
     searchInput.addEventListener("focus", function () {
-      if (searchInput.value.trim()) {
+      if (searchInput.value.trim() && !hiddenInput.value) {
         renderSuggestions(searchInput.value);
       }
     });
 
+    // Keyboard navigation (ArrowDown, ArrowUp, Enter, Escape)
+    searchInput.addEventListener("keydown", function (event) {
+      const options = suggestions.querySelectorAll(".autocomplete-option");
+      if (!options.length || !suggestions.classList.contains("is-visible")) {
+        return;
+      }
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        activeIndex = (activeIndex + 1) % options.length;
+        highlightOption(options, activeIndex);
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        activeIndex = (activeIndex - 1 + options.length) % options.length;
+        highlightOption(options, activeIndex);
+      } else if (event.key === "Enter") {
+        if (activeIndex >= 0 && activeIndex < options.length) {
+          event.preventDefault();
+          options[activeIndex].click();
+        }
+      } else if (event.key === "Escape") {
+        closeSuggestions();
+      }
+    });
+
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        searchInput.value = "";
+        hiddenInput.value = "";
+        closeSuggestions();
+        updateClearButton();
+        searchInput.focus();
+      });
+    }
+
     document.addEventListener("click", function (event) {
       const wrapper = searchInput.closest(".autocomplete-wrapper");
-
       if (wrapper && !wrapper.contains(event.target)) {
         closeSuggestions();
       }
     });
+
+    updateClearButton();
   }
 
-  setupStopAutocomplete("source-search", "source", "source-suggestions");
+  setupStopAutocomplete("source-search", "source", "source-suggestions", "clear-source-btn");
+  setupStopAutocomplete("destination-search", "destination", "destination-suggestions", "clear-destination-btn");
 
-  setupStopAutocomplete(
-    "destination-search",
-    "destination",
-    "destination-suggestions",
-  );
-
-  const routeSearchForm = document.querySelector(".route-search-form");
-
+  // Form submit validation: ensure valid stops are selected
+  const routeSearchForm = document.getElementById("route-search-form");
   if (routeSearchForm) {
     routeSearchForm.addEventListener("submit", function (event) {
       const source = document.getElementById("source");
       const destination = document.getElementById("destination");
+      const sourceSearch = document.getElementById("source-search");
+      const destinationSearch = document.getElementById("destination-search");
 
-      if (!source.value || !destination.value) {
+      let hasError = false;
+
+      if (!source.value) {
+        hasError = true;
+        sourceSearch.classList.add("input-error");
+        sourceSearch.focus();
+      } else {
+        sourceSearch.classList.remove("input-error");
+      }
+
+      if (!destination.value) {
+        hasError = true;
+        destinationSearch.classList.add("input-error");
+        if (!source.value) {
+          sourceSearch.focus();
+        } else {
+          destinationSearch.focus();
+        }
+      } else {
+        destinationSearch.classList.remove("input-error");
+      }
+
+      if (hasError) {
         event.preventDefault();
       }
     });
   }
-</script>
 
-<!-- ========================================================= -->
-<!-- PAGE INTERACTION                                          -->
-<!-- ========================================================= -->
-
-<script>
+  // Swap Locations function
   function swapLocations() {
     const source = document.getElementById("source");
-
     const destination = document.getElementById("destination");
-
     const sourceSearch = document.getElementById("source-search");
-
     const destinationSearch = document.getElementById("destination-search");
+    const clearSourceBtn = document.getElementById("clear-source-btn");
+    const clearDestBtn = document.getElementById("clear-destination-btn");
 
     if (!source || !destination || !sourceSearch || !destinationSearch) {
       return;
     }
 
-    /*
-     * Swap hidden BusStop IDs.
-     */
+    // Dismiss any open autocomplete lists
+    if (autocompleteControllers["source-search"]) {
+      autocompleteControllers["source-search"]();
+    }
+    if (autocompleteControllers["destination-search"]) {
+      autocompleteControllers["destination-search"]();
+    }
 
-    const sourceValue = source.value;
-
-    const destinationValue = destination.value;
-
-    source.value = destinationValue;
-
-    destination.value = sourceValue;
-
-    /*
-     * Swap visible stop names.
-     */
+    const sourceVal = source.value;
+    const destVal = destination.value;
+    source.value = destVal;
+    destination.value = sourceVal;
 
     const sourceText = sourceSearch.value;
-
-    const destinationText = destinationSearch.value;
-
-    sourceSearch.value = destinationText;
-
+    const destText = destinationSearch.value;
+    sourceSearch.value = destText;
     destinationSearch.value = sourceText;
+
+    if (clearSourceBtn) {
+      clearSourceBtn.style.display = sourceSearch.value ? "flex" : "none";
+    }
+    if (clearDestBtn) {
+      clearDestBtn.style.display = destinationSearch.value ? "flex" : "none";
+    }
   }
-</script>
 
-<script>
-  /*
-   * =========================================================
-   * RECENT SEARCHES
-   * =========================================================
-   *
-   * Recent searches are stored locally in the user's browser.
-   * No database or Django backend changes are required.
-   */
-
+  // =========================================================
+  // RECENT SEARCHES (localStorage)
+  // =========================================================
   const RECENT_SEARCHES_KEY = "yatraMapRecentSearches";
   const MAX_RECENT_SEARCHES = 5;
 
   function getRecentSearches() {
     try {
-      const storedSearches = localStorage.getItem(RECENT_SEARCHES_KEY);
-
-      if (!storedSearches) {
-        return [];
-      }
-
-      const searches = JSON.parse(storedSearches);
-
+      const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+      if (!stored) return [];
+      const searches = JSON.parse(stored);
       return Array.isArray(searches) ? searches : [];
-    } catch (error) {
-      console.warn("Unable to read recent searches.", error);
-
+    } catch (err) {
+      console.warn("Unable to read recent searches.", err);
       return [];
     }
   }
 
-  function saveRecentSearch(
-    sourceId,
-    sourceName,
-    destinationId,
-    destinationName,
-  ) {
-    if (!sourceId || !sourceName || !destinationId || !destinationName) {
-      return;
-    }
+  function saveRecentSearch(sourceId, sourceName, destinationId, destinationName) {
+    if (!sourceId || !sourceName || !destinationId || !destinationName) return;
 
-    const newSearch = {
+    let searches = getRecentSearches().filter(function (s) {
+      return !(
+        String(s.sourceId) === String(sourceId) &&
+        String(s.destinationId) === String(destinationId)
+      );
+    });
+
+    searches.unshift({
       sourceId: sourceId,
       sourceName: sourceName,
       destinationId: destinationId,
       destinationName: destinationName,
-    };
-
-    let searches = getRecentSearches();
-
-    /*
-     * Remove an existing identical search so that
-     * repeated searches move to the top instead of
-     * creating duplicates.
-     */
-    searches = searches.filter(function (search) {
-      return !(
-        String(search.sourceId) === String(sourceId) &&
-        String(search.destinationId) === String(destinationId)
-      );
     });
 
-    /*
-     * Put the newest search first.
-     */
-    searches.unshift(newSearch);
-
-    /*
-     * Keep only the latest searches.
-     */
     searches = searches.slice(0, MAX_RECENT_SEARCHES);
 
     try {
       localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches));
-    } catch (error) {
-      console.warn("Unable to save recent search.", error);
+    } catch (err) {
+      console.warn("Unable to save recent search.", err);
     }
   }
 
   function renderRecentSearches() {
     const recentSection = document.getElementById("recent-searches");
     const recentList = document.getElementById("recent-search-list");
-
-    if (!recentSection || !recentList) {
-      return;
-    }
+    if (!recentSection || !recentList) return;
 
     const searches = getRecentSearches();
-
     recentList.innerHTML = "";
 
     if (searches.length === 0) {
@@ -915,35 +963,19 @@
 
     recentSection.hidden = false;
 
-    searches.forEach(function (search, index) {
+    searches.forEach(function (search) {
       const item = document.createElement("button");
-
       item.type = "button";
       item.className = "recent-search-item";
-
-      item.setAttribute(
-        "aria-label",
-        "Search from " + search.sourceName + " to " + search.destinationName,
-      );
+      item.setAttribute("aria-label", "Search from " + search.sourceName + " to " + search.destinationName);
 
       item.innerHTML = `
         <span class="recent-search-route">
-          <span class="recent-search-stop">
-            ${escapeRecentSearchText(search.sourceName)}
-          </span>
-
-          <span class="recent-search-arrow" aria-hidden="true">
-            →
-          </span>
-
-          <span class="recent-search-stop">
-            ${escapeRecentSearchText(search.destinationName)}
-          </span>
+          <span class="recent-search-stop">${escapeText(search.sourceName)}</span>
+          <span class="recent-search-arrow" aria-hidden="true">→</span>
+          <span class="recent-search-stop">${escapeText(search.destinationName)}</span>
         </span>
-
-        <span class="recent-search-icon" aria-hidden="true">
-          ↗
-        </span>
+        <span class="recent-search-icon" aria-hidden="true">↗</span>
       `;
 
       item.addEventListener("click", function () {
@@ -954,259 +986,121 @@
     });
   }
 
-  /*
-   * Escape text before inserting it into innerHTML.
-   */
-  function escapeRecentSearchText(value) {
-    const element = document.createElement("div");
-
-    element.textContent = value || "";
-
-    return element.innerHTML;
-  }
-
   function loadRecentSearch(search) {
     const source = document.getElementById("source");
     const destination = document.getElementById("destination");
-
     const sourceSearch = document.getElementById("source-search");
     const destinationSearch = document.getElementById("destination-search");
+    const clearSourceBtn = document.getElementById("clear-source-btn");
+    const clearDestBtn = document.getElementById("clear-destination-btn");
 
-    if (!source || !destination || !sourceSearch || !destinationSearch) {
-      return;
-    }
+    if (!source || !destination || !sourceSearch || !destinationSearch) return;
+
+    // Dismiss suggestions
+    if (autocompleteControllers["source-search"]) autocompleteControllers["source-search"]();
+    if (autocompleteControllers["destination-search"]) autocompleteControllers["destination-search"]();
 
     source.value = search.sourceId;
     destination.value = search.destinationId;
-
     sourceSearch.value = search.sourceName;
     destinationSearch.value = search.destinationName;
 
-    /*
-     * Scroll back to the search form so the user can
-     * immediately submit the restored journey.
-     */
-    if (sourceSearch.closest(".route-search-form")) {
-      sourceSearch.closest(".route-search-form").scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+    if (clearSourceBtn) clearSourceBtn.style.display = "flex";
+    if (clearDestBtn) clearDestBtn.style.display = "flex";
+
+    const form = document.getElementById("route-search-form");
+    if (form) {
+      form.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }
 
   function clearRecentSearches() {
     try {
       localStorage.removeItem(RECENT_SEARCHES_KEY);
-    } catch (error) {
-      console.warn("Unable to clear recent searches.", error);
+    } catch (err) {
+      console.warn("Unable to clear recent searches.", err);
     }
-
     renderRecentSearches();
   }
 
-  /*
-   * Save a search when the route form is submitted.
-   */
-  const recentSearchForm = document.querySelector(".route-search-form");
-
-  if (recentSearchForm) {
-    recentSearchForm.addEventListener("submit", function (event) {
-      const source = document.getElementById("source");
-      const destination = document.getElementById("destination");
-
-      const sourceSearch = document.getElementById("source-search");
-      const destinationSearch = document.getElementById("destination-search");
-
-      if (
-        event.defaultPrevented ||
-        !source ||
-        !destination ||
-        !sourceSearch ||
-        !destinationSearch
-      ) {
-        return;
-      }
-
-      if (
-        !source.value ||
-        !destination.value ||
-        !sourceSearch.value ||
-        !destinationSearch.value
-      ) {
-        return;
-      }
-
-      saveRecentSearch(
-        source.value,
-        sourceSearch.value,
-        destination.value,
-        destinationSearch.value,
-      );
-    });
-  }
-
-  /*
-   * Clear button.
-   */
-  const clearRecentSearchesButton = document.getElementById(
-    "clear-recent-searches",
-  );
-
+  const clearRecentSearchesButton = document.getElementById("clear-recent-searches");
   if (clearRecentSearchesButton) {
     clearRecentSearchesButton.addEventListener("click", clearRecentSearches);
   }
 
-  /*
-   * Record the current successful search when the results page loads.
-   * This makes Recent Searches reliable even if the browser navigates
-   * away before the submit event finishes.
-   */
+  // Record current successful search
   function recordCurrentSearchFromPage() {
     const source = document.getElementById("source");
     const destination = document.getElementById("destination");
-
     const sourceSearch = document.getElementById("source-search");
     const destinationSearch = document.getElementById("destination-search");
 
-    if (!source || !destination || !sourceSearch || !destinationSearch) {
-      return;
-    }
+    if (!source || !destination || !sourceSearch || !destinationSearch) return;
+    if (!source.value || !destination.value || !sourceSearch.value || !destinationSearch.value) return;
 
-    if (
-      !source.value ||
-      !destination.value ||
-      !sourceSearch.value ||
-      !destinationSearch.value
-    ) {
-      return;
-    }
-
-    saveRecentSearch(
-      source.value,
-      sourceSearch.value,
-      destination.value,
-      destinationSearch.value,
-    );
+    saveRecentSearch(source.value, sourceSearch.value, destination.value, destinationSearch.value);
   }
 
   recordCurrentSearchFromPage();
-
-  /*
-   * Render saved searches when the page loads.
-   */
   renderRecentSearches();
 
-    /*
-  * =========================================================
-  * FAVORITE ROUTES
-  * =========================================================
-  *
-  * Favorite routes are stored locally in the user's browser.
-  * They are independent from Recent Searches.
-  */
-
+  // =========================================================
+  // FAVORITE ROUTES (localStorage)
+  // =========================================================
   const FAVORITE_ROUTES_KEY = "yatraMapFavoriteRoutes";
   const MAX_FAVORITE_ROUTES = 8;
 
   function getFavoriteRoutes() {
     try {
-      const storedFavorites = localStorage.getItem(
-        FAVORITE_ROUTES_KEY,
-      );
-
-      if (!storedFavorites) {
-        return [];
-      }
-
-      const favorites = JSON.parse(storedFavorites);
-
-      return Array.isArray(favorites) ? favorites : [];
-    } catch (error) {
-      console.warn("Unable to read favorite routes.", error);
+      const stored = localStorage.getItem(FAVORITE_ROUTES_KEY);
+      if (!stored) return [];
+      const favs = JSON.parse(stored);
+      return Array.isArray(favs) ? favs : [];
+    } catch (err) {
+      console.warn("Unable to read favorite routes.", err);
       return [];
     }
   }
 
   function isFavoriteRoute(sourceId, destinationId) {
-    const favorites = getFavoriteRoutes();
-
-    return favorites.some(function (favorite) {
-      return (
-        String(favorite.sourceId) === String(sourceId) &&
-        String(favorite.destinationId) === String(destinationId)
-      );
+    return getFavoriteRoutes().some(function (f) {
+      return String(f.sourceId) === String(sourceId) && String(f.destinationId) === String(destinationId);
     });
   }
 
-  function saveFavoriteRoute(
-    sourceId,
-    sourceName,
-    destinationId,
-    destinationName,
-  ) {
-    if (
-      !sourceId ||
-      !sourceName ||
-      !destinationId ||
-      !destinationName
-    ) {
-      return false;
-    }
+  function saveFavoriteRoute(sourceId, sourceName, destinationId, destinationName) {
+    if (!sourceId || !sourceName || !destinationId || !destinationName) return false;
 
     let favorites = getFavoriteRoutes();
+    if (isFavoriteRoute(sourceId, destinationId)) return true;
 
-    const alreadyFavorite = favorites.some(function (favorite) {
-      return (
-        String(favorite.sourceId) === String(sourceId) &&
-        String(favorite.destinationId) === String(destinationId)
-      );
-    });
-
-    if (alreadyFavorite) {
-      return true;
-    }
-
-    const newFavorite = {
+    favorites.unshift({
       sourceId: sourceId,
       sourceName: sourceName,
       destinationId: destinationId,
       destinationName: destinationName,
-    };
-
-    favorites.unshift(newFavorite);
+    });
 
     favorites = favorites.slice(0, MAX_FAVORITE_ROUTES);
 
     try {
-      localStorage.setItem(
-        FAVORITE_ROUTES_KEY,
-        JSON.stringify(favorites),
-      );
-
+      localStorage.setItem(FAVORITE_ROUTES_KEY, JSON.stringify(favorites));
       return true;
-    } catch (error) {
-      console.warn("Unable to save favorite route.", error);
+    } catch (err) {
+      console.warn("Unable to save favorite route.", err);
       return false;
     }
   }
 
   function removeFavoriteRoute(sourceId, destinationId) {
-    let favorites = getFavoriteRoutes();
-
-    favorites = favorites.filter(function (favorite) {
-      return !(
-        String(favorite.sourceId) === String(sourceId) &&
-        String(favorite.destinationId) === String(destinationId)
-      );
+    let favorites = getFavoriteRoutes().filter(function (f) {
+      return !(String(f.sourceId) === String(sourceId) && String(f.destinationId) === String(destinationId));
     });
 
     try {
-      localStorage.setItem(
-        FAVORITE_ROUTES_KEY,
-        JSON.stringify(favorites),
-      );
-    } catch (error) {
-      console.warn("Unable to remove favorite route.", error);
+      localStorage.setItem(FAVORITE_ROUTES_KEY, JSON.stringify(favorites));
+    } catch (err) {
+      console.warn("Unable to remove favorite route.", err);
     }
 
     renderFavoriteRoutes();
@@ -1214,18 +1108,11 @@
   }
 
   function renderFavoriteRoutes() {
-    const favoriteSection =
-      document.getElementById("favorite-routes");
-
-    const favoriteList =
-      document.getElementById("favorite-route-list");
-
-    if (!favoriteSection || !favoriteList) {
-      return;
-    }
+    const favoriteSection = document.getElementById("favorite-routes");
+    const favoriteList = document.getElementById("favorite-route-list");
+    if (!favoriteSection || !favoriteList) return;
 
     const favorites = getFavoriteRoutes();
-
     favoriteList.innerHTML = "";
 
     if (favorites.length === 0) {
@@ -1237,106 +1124,51 @@
 
     favorites.forEach(function (favorite) {
       const item = document.createElement("div");
-
       item.className = "favorite-route-item";
 
       const loadButton = document.createElement("button");
-
       loadButton.type = "button";
       loadButton.className = "favorite-route-load";
-
-      loadButton.setAttribute(
-        "aria-label",
-        "Load favorite route from " +
-          favorite.sourceName +
-          " to " +
-          favorite.destinationName,
-      );
-
+      loadButton.setAttribute("aria-label", "Load favorite route: " + favorite.sourceName + " to " + favorite.destinationName);
       loadButton.innerHTML = `
         <span class="favorite-route-path">
-          <span class="favorite-route-stop">
-            ${escapeRecentSearchText(favorite.sourceName)}
-          </span>
-
-          <span
-            class="favorite-route-arrow"
-            aria-hidden="true"
-          >
-            →
-          </span>
-
-          <span class="favorite-route-stop">
-            ${escapeRecentSearchText(favorite.destinationName)}
-          </span>
+          <span class="favorite-route-stop">${escapeText(favorite.sourceName)}</span>
+          <span class="favorite-route-arrow" aria-hidden="true">→</span>
+          <span class="favorite-route-stop">${escapeText(favorite.destinationName)}</span>
         </span>
       `;
-
       loadButton.addEventListener("click", function () {
         loadRecentSearch(favorite);
       });
 
       const removeButton = document.createElement("button");
-
       removeButton.type = "button";
       removeButton.className = "favorite-route-remove";
       removeButton.textContent = "Remove";
-
-      removeButton.setAttribute(
-        "aria-label",
-        "Remove favorite route from " +
-          favorite.sourceName +
-          " to " +
-          favorite.destinationName,
-      );
-
+      removeButton.setAttribute("aria-label", "Remove favorite route: " + favorite.sourceName + " to " + favorite.destinationName);
       removeButton.addEventListener("click", function () {
-        removeFavoriteRoute(
-          favorite.sourceId,
-          favorite.destinationId,
-        );
+        removeFavoriteRoute(favorite.sourceId, favorite.destinationId);
       });
 
       item.appendChild(loadButton);
       item.appendChild(removeButton);
-
       favoriteList.appendChild(item);
     });
   }
 
   function updateFavoriteButton() {
-    const button = document.getElementById(
-      "favorite-route-button",
-    );
-
-    if (!button) {
-      return;
-    }
+    const button = document.getElementById("favorite-route-button");
+    if (!button) return;
 
     const source = document.getElementById("source");
     const destination = document.getElementById("destination");
+    const star = button.querySelector(".favorite-route-star");
+    const buttonText = button.querySelector(".favorite-route-button-text");
 
-    const star = button.querySelector(
-      ".favorite-route-star",
-    );
+    if (!source || !destination || !star || !buttonText) return;
 
-    const buttonText = button.querySelector(
-      ".favorite-route-button-text",
-    );
-
-    if (!source || !destination || !star || !buttonText) {
-      return;
-    }
-
-    const saved = isFavoriteRoute(
-      source.value,
-      destination.value,
-    );
-
-    button.setAttribute(
-      "aria-pressed",
-      saved ? "true" : "false",
-    );
+    const saved = isFavoriteRoute(source.value, destination.value);
+    button.setAttribute("aria-pressed", saved ? "true" : "false");
 
     if (saved) {
       star.textContent = "★";
@@ -1352,69 +1184,34 @@
   function toggleFavoriteRoute() {
     const source = document.getElementById("source");
     const destination = document.getElementById("destination");
+    const sourceSearch = document.getElementById("source-search");
+    const destinationSearch = document.getElementById("destination-search");
 
-    const sourceSearch =
-      document.getElementById("source-search");
+    if (!source || !destination || !sourceSearch || !destinationSearch) return;
+    if (!source.value || !destination.value) return;
 
-    const destinationSearch =
-      document.getElementById("destination-search");
-
-    if (
-      !source ||
-      !destination ||
-      !sourceSearch ||
-      !destinationSearch
-    ) {
-      return;
-    }
-
-    if (!source.value || !destination.value) {
-      return;
-    }
-
-    if (
-      isFavoriteRoute(
-        source.value,
-        destination.value,
-      )
-    ) {
-      removeFavoriteRoute(
-        source.value,
-        destination.value,
-      );
-
-      return;
-    }
-
-    const saved = saveFavoriteRoute(
-      source.value,
-      sourceSearch.value,
-      destination.value,
-      destinationSearch.value,
-    );
-
-    if (saved) {
-      updateFavoriteButton();
-      renderFavoriteRoutes();
+    if (isFavoriteRoute(source.value, destination.value)) {
+      removeFavoriteRoute(source.value, destination.value);
+    } else {
+      const saved = saveFavoriteRoute(source.value, sourceSearch.value, destination.value, destinationSearch.value);
+      if (saved) {
+        updateFavoriteButton();
+        renderFavoriteRoutes();
+      }
     }
   }
 
-  const favoriteRouteButton = document.getElementById(
-    "favorite-route-button",
-  );
-
+  const favoriteRouteButton = document.getElementById("favorite-route-button");
   if (favoriteRouteButton) {
-    favoriteRouteButton.addEventListener(
-      "click",
-      toggleFavoriteRoute,
-    );
+    favoriteRouteButton.addEventListener("click", toggleFavoriteRoute);
   }
 
   renderFavoriteRoutes();
   updateFavoriteButton();
 
-  // ====adding the JS for finding nearby stops====
-
+  // =========================================================
+  // NEARBY BUS STOPS (Geolocation API + /api/nearby-stops/)
+  // =========================================================
   const nearbyButton = document.getElementById("find-nearby-stops");
   const nearbyStatus = document.getElementById("nearby-stops-status");
   const nearbyList = document.getElementById("nearby-stops-list");
@@ -1425,11 +1222,48 @@
     }
   }
 
-  function renderNearbyStops(stops) {
-    if (!nearbyList) {
+  // Corrected setStopAsLocation: properly synchronizes text, hidden ID,
+  // closes suggestions without opening dropdown, updates clear button,
+  // and smoothly reveals the updated search input.
+  function setStopAsLocation(type, stop) {
+    const searchInput = document.getElementById(
+      type === "source" ? "source-search" : "destination-search"
+    );
+    const hiddenInput = document.getElementById(
+      type === "source" ? "source" : "destination"
+    );
+    const clearBtn = document.getElementById(
+      type === "source" ? "clear-source-btn" : "clear-destination-btn"
+    );
+
+    if (!searchInput || !hiddenInput) {
       return;
     }
 
+    // Dismiss suggestions
+    const searchId = type === "source" ? "source-search" : "destination-search";
+    if (autocompleteControllers[searchId]) {
+      autocompleteControllers[searchId]();
+    }
+
+    searchInput.value = stop.name;
+    hiddenInput.value = stop.id;
+
+    if (clearBtn) {
+      clearBtn.style.display = "flex";
+    }
+
+    searchInput.classList.remove("input-error");
+
+    // Scroll to the search form so the user can easily see their selected stop
+    const form = document.getElementById("route-search-form");
+    if (form) {
+      form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+
+  function renderNearbyStops(stops) {
+    if (!nearbyList) return;
     nearbyList.innerHTML = "";
 
     if (!stops.length) {
@@ -1437,9 +1271,7 @@
       return;
     }
 
-    setNearbyStatus(
-      `Found ${stops.length} nearby bus stop${stops.length === 1 ? "" : "s"}.`
-    );
+    setNearbyStatus(`Found ${stops.length} nearby bus stop${stops.length === 1 ? "" : "s"}.`);
 
     stops.forEach(function (stop) {
       const card = document.createElement("article");
@@ -1448,139 +1280,113 @@
       const details = document.createElement("div");
       details.className = "nearby-stop-details";
 
+      const topRow = document.createElement("div");
+      topRow.className = "nearby-stop-top";
+
       const name = document.createElement("h3");
       name.className = "nearby-stop-name";
       name.textContent = stop.name;
 
-      const distance = document.createElement("p");
-      distance.className = "nearby-stop-distance";
-      distance.textContent =
-        stop.distance_km === 0
-          ? "At your location"
-          : `${stop.distance_km.toFixed(2)} km away`;
+      const dist = document.createElement("span");
+      dist.className = "nearby-stop-distance";
+      dist.textContent = stop.distance_km === 0 ? "At your location" : `${stop.distance_km.toFixed(2)} km away`;
 
-      details.appendChild(name);
-      details.appendChild(distance);
+      topRow.appendChild(name);
+      topRow.appendChild(dist);
+      details.appendChild(topRow);
 
       if (stop.location_description) {
-        const description = document.createElement("p");
-        description.className = "nearby-stop-description";
-        description.textContent = stop.location_description;
-        details.appendChild(description);
+        const desc = document.createElement("p");
+        desc.className = "nearby-stop-description";
+        desc.textContent = stop.location_description;
+        details.appendChild(desc);
       }
 
       const actions = document.createElement("div");
       actions.className = "nearby-stop-actions";
 
-      const fromButton = document.createElement("button");
-      fromButton.type = "button";
-      fromButton.className = "nearby-stop-action";
-      fromButton.textContent = "Use as From";
-
-      fromButton.addEventListener("click", function () {
+      const fromBtn = document.createElement("button");
+      fromBtn.type = "button";
+      fromBtn.className = "nearby-stop-action";
+      fromBtn.innerHTML = `<span>Use as From</span>`;
+      fromBtn.addEventListener("click", function () {
         setStopAsLocation("source", stop);
       });
 
-      const toButton = document.createElement("button");
-      toButton.type = "button";
-      toButton.className = "nearby-stop-action";
-      toButton.textContent = "Use as To";
-
-      toButton.addEventListener("click", function () {
+      const toBtn = document.createElement("button");
+      toBtn.type = "button";
+      toBtn.className = "nearby-stop-action";
+      toBtn.innerHTML = `<span>Use as To</span>`;
+      toBtn.addEventListener("click", function () {
         setStopAsLocation("destination", stop);
       });
 
-      actions.appendChild(fromButton);
-      actions.appendChild(toButton);
+      actions.appendChild(fromBtn);
+      actions.appendChild(toBtn);
 
       card.appendChild(details);
       card.appendChild(actions);
-
       nearbyList.appendChild(card);
     });
   }
 
-  function setStopAsLocation(type, stop) {
-    const searchInput = document.getElementById(
-      type === "source" ? "source-search" : "destination-search"
-    );
-
-    const hiddenInput = document.getElementById(
-      type === "source" ? "source" : "destination"
-    );
-
-    if (!searchInput || !hiddenInput) {
-      return;
-    }
-
-    searchInput.value = stop.name;
-    hiddenInput.value = stop.id;
-
-    searchInput.dispatchEvent(new Event("change", { bubbles: true }));
-
-    searchInput.focus();
-  }
-
   function findNearbyStops() {
     if (!navigator.geolocation) {
-      setNearbyStatus(
-        "Location services are not supported by your browser."
-      );
+      setNearbyStatus("Location services are not supported by your browser.");
       return;
     }
 
-    setNearbyStatus("Finding your location...");
+    setNearbyStatus("Accessing GPS location...");
     nearbyList.innerHTML = "";
 
     nearbyButton.disabled = true;
-    nearbyButton.textContent = "Finding stops...";
+    nearbyButton.innerHTML = `<span>Locating...</span>`;
 
     navigator.geolocation.getCurrentPosition(
       function (position) {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
 
-        setNearbyStatus("Finding nearby bus stops...");
+        setNearbyStatus("Finding nearest Kathmandu Valley bus stops...");
 
-        fetch(
-          `/api/nearby-stops/?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`
-        )
+        fetch(`/api/nearby-stops/?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`)
           .then(function (response) {
             if (!response.ok) {
               throw new Error("Nearby stops request failed.");
             }
-
             return response.json();
           })
           .then(function (data) {
             renderNearbyStops(data.results || []);
           })
           .catch(function () {
-            setNearbyStatus(
-              "Unable to load nearby stops. Please try again."
-            );
+            setNearbyStatus("Unable to load nearby stops. Please try again.");
           })
           .finally(function () {
             nearbyButton.disabled = false;
-            nearbyButton.textContent = "Find nearby stops";
+            nearbyButton.innerHTML = `
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="3 11 22 2 13 21 11 13 3 11" />
+              </svg>
+              <span>Find nearby stops</span>
+            `;
           });
       },
       function (error) {
         nearbyButton.disabled = false;
-        nearbyButton.textContent = "Find nearby stops";
+        nearbyButton.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="3 11 22 2 13 21 11 13 3 11" />
+          </svg>
+          <span>Find nearby stops</span>
+        `;
 
         if (error.code === error.PERMISSION_DENIED) {
-          setNearbyStatus(
-            "Location permission was denied. Please allow location access and try again."
-          );
+          setNearbyStatus("Location permission was denied. Please allow location access in your browser and try again.");
         } else if (error.code === error.POSITION_UNAVAILABLE) {
-          setNearbyStatus(
-            "Your location could not be determined."
-          );
+          setNearbyStatus("Your GPS position could not be determined.");
         } else {
-          setNearbyStatus(
-            "Unable to determine your location. Please try again."
-          );
+          setNearbyStatus("Unable to determine your location. Please try again.");
         }
       },
       {
@@ -1595,5 +1401,4 @@
     nearbyButton.addEventListener("click", findNearbyStops);
   }
 </script>
-
 {% endblock %}
