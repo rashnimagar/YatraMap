@@ -4,15 +4,22 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
-class Operator(models.Model):
+class TimeStampedModel(models.Model):
+    """Abstract base model providing creation and update timestamps."""
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
+class Operator(TimeStampedModel):
     name = models.CharField(max_length=150, unique=True)
     description = models.TextField(blank=True)
     contact = models.CharField(max_length=100, blank=True)
     website = models.URLField(blank=True)
     is_active = models.BooleanField(default=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["name"]
@@ -21,7 +28,7 @@ class Operator(models.Model):
         return self.name
 
 
-class BusStop(models.Model):
+class BusStop(TimeStampedModel):
     name = models.CharField(max_length=150)
     latitude = models.DecimalField(
         max_digits=8,
@@ -46,9 +53,6 @@ class BusStop(models.Model):
     )
     is_active = models.BooleanField(default=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         ordering = ["name"]
 
@@ -56,7 +60,7 @@ class BusStop(models.Model):
         return self.name
 
 
-class BusRoute(models.Model):
+class BusRoute(TimeStampedModel):
     operator = models.ForeignKey(
         Operator,
         on_delete=models.PROTECT,
@@ -85,9 +89,6 @@ class BusRoute(models.Model):
         help_text="Whether the route can be travelled in both directions.",
     )
     is_active = models.BooleanField(default=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["route_number", "name"]
