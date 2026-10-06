@@ -10,11 +10,14 @@ ROUTE_STOPS_FILE = BASE_DIR / "route_stops.csv"
 
 
 def haversine_distance(
-    latitude_1,
-    longitude_1,
-    latitude_2,
-    longitude_2,
-):
+    latitude_1: float,
+    longitude_1: float,
+    latitude_2: float,
+    longitude_2: float,
+) -> float:
+    """
+    Calculate great-circle distance between two GPS coordinates using Haversine formula.
+    """
     earth_radius_km = 6371.0
 
     latitude_difference = math.radians(latitude_2 - latitude_1)
@@ -38,85 +41,107 @@ def haversine_distance(
     return earth_radius_km * c
 
 
-def load_stops():
-    stops = {}
+class RouteDistanceCalculator:
+    """
+    Calculator service for computing distances between consecutive stops in route_stops.csv.
+    """
 
-    with STOPS_FILE.open(
-        "r",
-        encoding="utf-8-sig",
-        newline="",
-    ) as file:
-        reader = csv.DictReader(file)
+    def __init__(
+        self,
+        stops_file: Path = STOPS_FILE,
+        route_stops_file: Path = ROUTE_STOPS_FILE,
+    ):
+        self.stops_file = stops_file
+        self.route_stops_file = route_stops_file
 
-        for row in reader:
-            if not row["latitude"] or not row["longitude"]:
-                raise ValueError(f"Missing coordinates for stop: {row['stop_id']}")
+    def load_stops(self) -> dict:
+        stops = {}
 
-            stops[row["stop_id"]] = {
-                "latitude": float(row["latitude"]),
-                "longitude": float(row["longitude"]),
-            }
+        with self.stops_file.open(
+            "r",
+            encoding="utf-8-sig",
+            newline="",
+        ) as file:
+            reader = csv.DictReader(file)
 
-    return stops
+            for row in reader:
+                if not row["latitude"] or not row["longitude"]:
+                    raise ValueError(f"Missing coordinates for stop: {row['stop_id']}")
 
+                stops[row["stop_id"]] = {
+                    "latitude": float(row["latitude"]),
+                    "longitude": float(row["longitude"]),
+                }
 
-def calculate_route_distances():
-    stops = load_stops()
+        return stops
 
-    with ROUTE_STOPS_FILE.open(
-        "r",
-        encoding="utf-8-sig",
-        newline="",
-    ) as file:
-        rows = list(csv.DictReader(file))
-        fieldnames = [
-            "route_id",
-            "stop_id",
-            "sequence",
-            "distance_from_previous",
-        ]
+    def calculate(self) -> int:
+        stops = self.load_stops()
 
-    previous_route_id = None
-    previous_stop = None
+        with self.route_stops_file.open(
+            "r",
+            encoding="utf-8-sig",
+            newline="",
+        ) as file:
+            rows = list(csv.DictReader(file))
+            fieldnames = [
+                "route_id",
+                "stop_id",
+                "sequence",
+                "distance_from_previous",
+            ]
 
-    for row in rows:
-        route_id = row["route_id"]
-        stop_id = row["stop_id"]
+        previous_route_id = None
+        previous_stop = None
 
-        if route_id != previous_route_id:
-            row["distance_from_previous"] = ""
-            previous_route_id = route_id
+        for row in rows:
+            route_id = row["route_id"]
+            stop_id = row["stop_id"]
+
+            if route_id != previous_route_id:
+                row["distance_from_previous"] = ""
+                previous_route_id = route_id
+                previous_stop = stop_id
+                continue
+
+            current_stop = stops[stop_id]
+            previous_coordinates = stops[previous_stop]
+
+            distance = haversine_distance(
+                previous_coordinates["latitude"],
+                previous_coordinates["longitude"],
+                current_stop["latitude"],
+                current_stop["longitude"],
+            )
+
+            row["distance_from_previous"] = f"{distance:.2f}"
             previous_stop = stop_id
-            continue
 
-        current_stop = stops[stop_id]
-        previous_coordinates = stops[previous_stop]
+        with self.route_stops_file.open(
+            "w",
+            encoding="utf-8",
+            newline="",
+        ) as file:
+            writer = csv.DictWriter(
+                file,
+                fieldnames=fieldnames,
+            )
 
-        distance = haversine_distance(
-            previous_coordinates["latitude"],
-            previous_coordinates["longitude"],
-            current_stop["latitude"],
-            current_stop["longitude"],
-        )
+            writer.writeheader()
+            writer.writerows(rows)
 
-        row["distance_from_previous"] = f"{distance:.2f}"
+        print(f"Updated {len(rows)} route-stop records.")
+        return len(rows)
 
-        previous_stop = stop_id
 
-    with ROUTE_STOPS_FILE.open(
-        "w",
-        encoding="utf-8",
-        newline="",
-    ) as file:
-        writer = csv.DictWriter(
-            file,
-            fieldnames=fieldnames,
-        )
+def load_stops() -> dict:
+    """Module-level helper for backwards compatibility."""
+    return RouteDistanceCalculator().load_stops()
 
-        writer.writeheader()
-        writer.writerows(rows)
 
-    print(f"Updated {len(rows)} route-stop records.")
+def calculate_route_distances() -> int:
+    """Module-level runner for backwards compatibility."""
+    return RouteDistanceCalculator().calculate()
 
 
 if __name__ == "__main__":

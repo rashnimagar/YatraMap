@@ -1,32 +1,38 @@
 from django.urls import path
 
-from . import views
+from .views import (
+    NearbyStopsView,
+    OperatorDetailView,
+    OperatorListView,
+    RouteDetailView,
+    RouteSearchView,
+)
 
 
 urlpatterns = [
     path(
         "",
-        views.route_search,
+        RouteSearchView.as_view(),
         name="route_search",
     ),
     path(
         "operators/",
-        views.operators,
+        OperatorListView.as_view(),
         name="operators",
     ),
     path(
         "operators/<int:pk>/",
-        views.operator_detail,
+        OperatorDetailView.as_view(),
         name="operator_detail",
     ),
     path(
         "routes/<int:pk>/",
-        views.route_detail,
+        RouteDetailView.as_view(),
         name="route_detail",
     ),
     path(
         "api/nearby-stops/",
-        views.nearby_stops,
+        NearbyStopsView.as_view(),
         name="nearby_stops",
     ),
 ]

@@ -8,68 +8,29 @@ from django.db import transaction
 from routes.models import BusRoute, BusStop, Operator, RouteStop
 
 
-class Command(BaseCommand):
-    help = "Import Kathmandu Valley transit data from CSV files."
+class TransitDataImporter:
+    """
+    Service for importing Kathmandu Valley transit CSV data into the database.
+    """
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--clear",
-            action="store_true",
-            help="Clear existing transit data before importing.",
-        )
+    def __init__(
+        self,
+        base_dir: Path | str = "data",
+        stdout=None,
+        style=None,
+    ):
+        self.base_dir = Path(base_dir)
+        self.stdout = stdout
+        self.style = style
 
-    def handle(self, *args, **options):
-        base_dir = Path("data")
+    def log(self, message: str, style_fn=None) -> None:
+        if self.stdout:
+            if style_fn:
+                self.stdout.write(style_fn(message))
+            else:
+                self.stdout.write(message)
 
-        operators_file = base_dir / "operators.csv"
-        routes_file = base_dir / "routes.csv"
-        stops_file = base_dir / "stops.csv"
-        route_stops_file = base_dir / "route_stops.csv"
-
-        files = [
-            operators_file,
-            routes_file,
-            stops_file,
-            route_stops_file,
-        ]
-
-        for file_path in files:
-            if not file_path.exists():
-                raise CommandError(f"Required data file not found: {file_path}")
-
-        try:
-            with transaction.atomic():
-                if options["clear"]:
-                    self.clear_data()
-
-                operators = self.import_operators(operators_file)
-                stops = self.import_stops(stops_file)
-                routes = self.import_routes(routes_file, operators)
-                self.import_route_stops(
-                    route_stops_file,
-                    routes,
-                    stops,
-                )
-
-        except Exception as exc:
-            raise CommandError(f"Import failed: {exc}") from exc
-
-        self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS("Transit data imported successfully."))
-        self.stdout.write(f"Operators: {Operator.objects.count()}")
-        self.stdout.write(f"Stops: {BusStop.objects.count()}")
-        self.stdout.write(f"Routes: {BusRoute.objects.count()}")
-        self.stdout.write(f"Route stops: {RouteStop.objects.count()}")
-
-    def clear_data(self):
-        self.stdout.write(self.style.WARNING("Clearing existing transit data..."))
-
-        RouteStop.objects.all().delete()
-        BusRoute.objects.all().delete()
-        BusStop.objects.all().delete()
-        Operator.objects.all().delete()
-
-    def read_csv(self, file_path):
+    def read_csv(self, file_path: Path) -> list[dict]:
         with file_path.open(
             "r",
             encoding="utf-8-sig",
@@ -77,7 +38,18 @@ class Command(BaseCommand):
         ) as file:
             return list(csv.DictReader(file))
 
-    def import_operators(self, file_path):
+    def clear_data(self) -> None:
+        if self.style:
+            self.log("Clearing existing transit data...", self.style.WARNING)
+        else:
+            self.log("Clearing existing transit data...")
+
+        RouteStop.objects.all().delete()
+        BusRoute.objects.all().delete()
+        BusStop.objects.all().delete()
+        Operator.objects.all().delete()
+
+    def import_operators(self, file_path: Path) -> dict[str, Operator]:
         rows = self.read_csv(file_path)
         operators = {}
 
@@ -100,11 +72,10 @@ class Command(BaseCommand):
 
             operators[operator_id] = operator
 
-        self.stdout.write(f"Imported {len(operators)} operators.")
-
+        self.log(f"Imported {len(operators)} operators.")
         return operators
 
-    def import_stops(self, file_path):
+    def import_stops(self, file_path: Path) -> dict[str, BusStop]:
         rows = self.read_csv(file_path)
         stops = {}
 
@@ -138,11 +109,14 @@ class Command(BaseCommand):
 
             stops[stop_id] = stop
 
-        self.stdout.write(f"Imported {len(stops)} stops.")
-
+        self.log(f"Imported {len(stops)} stops.")
         return stops
 
-    def import_routes(self, file_path, operators):
+    def import_routes(
+        self,
+        file_path: Path,
+        operators: dict[str, Operator],
+    ) -> dict[str, BusRoute]:
         rows = self.read_csv(file_path)
         routes = {}
 
@@ -173,18 +147,16 @@ class Command(BaseCommand):
 
             routes[route_id] = route
 
-        self.stdout.write(f"Imported {len(routes)} routes.")
-
+        self.log(f"Imported {len(routes)} routes.")
         return routes
 
     def import_route_stops(
         self,
-        file_path,
-        routes,
-        stops,
-    ):
+        file_path: Path,
+        routes: dict[str, BusRoute],
+        stops: dict[str, BusStop],
+    ) -> int:
         rows = self.read_csv(file_path)
-
         imported = 0
 
         for row in rows:
@@ -198,7 +170,6 @@ class Command(BaseCommand):
                 raise ValueError(f"Unknown stop '{stop_id}' in route_stops.csv.")
 
             sequence = int(row["sequence"])
-
             distance_value = row.get(
                 "distance_from_previous",
                 "",
@@ -217,4 +188,67 @@ class Command(BaseCommand):
 
             imported += 1
 
-        self.stdout.write(f"Imported {imported} route-stop records.")
+        self.log(f"Imported {imported} route-stop records.")
+        return imported
+
+    def import_all(self, clear: bool = False) -> None:
+        operators_file = self.base_dir / "operators.csv"
+        routes_file = self.base_dir / "routes.csv"
+        stops_file = self.base_dir / "stops.csv"
+        route_stops_file = self.base_dir / "route_stops.csv"
+
+        files = [
+            operators_file,
+            routes_file,
+            stops_file,
+            route_stops_file,
+        ]
+
+        for file_path in files:
+            if not file_path.exists():
+                raise FileNotFoundError(f"Required data file not found: {file_path}")
+
+        with transaction.atomic():
+            if clear:
+                self.clear_data()
+
+            operators = self.import_operators(operators_file)
+            stops = self.import_stops(stops_file)
+            routes = self.import_routes(routes_file, operators)
+            self.import_route_stops(
+                route_stops_file,
+                routes,
+                stops,
+            )
+
+
+class Command(BaseCommand):
+    help = "Import Kathmandu Valley transit data from CSV files."
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--clear",
+            action="store_true",
+            help="Clear existing transit data before importing.",
+        )
+
+    def handle(self, *args, **options):
+        importer = TransitDataImporter(
+            base_dir=Path("data"),
+            stdout=self.stdout,
+            style=self.style,
+        )
+
+        try:
+            importer.import_all(clear=options["clear"])
+        except FileNotFoundError as fnf_err:
+            raise CommandError(str(fnf_err)) from fnf_err
+        except Exception as exc:
+            raise CommandError(f"Import failed: {exc}") from exc
+
+        self.stdout.write("")
+        self.stdout.write(self.style.SUCCESS("Transit data imported successfully."))
+        self.stdout.write(f"Operators: {Operator.objects.count()}")
+        self.stdout.write(f"Stops: {BusStop.objects.count()}")
+        self.stdout.write(f"Routes: {BusRoute.objects.count()}")
+        self.stdout.write(f"Route stops: {RouteStop.objects.count()}")
